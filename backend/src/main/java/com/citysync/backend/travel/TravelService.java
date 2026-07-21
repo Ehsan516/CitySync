@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
@@ -76,6 +77,10 @@ public class TravelService {
             durationStr = durationStr.replace("s", "").trim();//strip s then parse
             return Integer.parseInt(durationStr);
 
+        } catch (WebClientResponseException e) {
+
+            System.err.println("[TravelService] Routes API error: " + e.getMessage() + " body=" + e.getResponseBodyAsString());
+            return -1;
         } catch (Exception e) {
 
             System.err.println("[TravelService] Routes API error: " + e.getMessage());//log and return -1 so frontend falls back to user buffer
@@ -192,6 +197,11 @@ public class TravelService {
 
         return new travelDeets(false, totalSecs, summary, steps);
         //full response rturned
+    } catch (WebClientResponseException e){
+
+        System.err.println("route detail eerror: " + e.getMessage() + " body=" + e.getResponseBodyAsString());
+
+        return new travelDeets(true, null, "route not available", List.of());
     } catch (Exception e){
 
         System.err.println("route detail eerror: " + e.getMessage());
