@@ -1,18 +1,7 @@
 import React from "react";
 import {View, Text, SectionList,StyleSheet, Pressable, SafeAreaView} from "react-native";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns"
-
-type UnifiedItem = {
-//calendar or coursework items on cal view
-  key: string;
-  source: "timetable" | "coursework";
-  title: string;
-  start: Date;
-  end: Date;
-  location?: string;
-  meta?: string;
-  onSite?: boolean;
-};
+import type { UnifiedItem } from "@/lib/types";
 
 type SectionType ={
     title: string; data: UnifiedItem[];

@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-
+import type { CourseworkDto, ModuleDto, TravelDetails, UserPrefDto } from "@/lib/types";
 
 function getApiBase(): string{
 //func to determine backend url when running expo go
@@ -43,3 +43,169 @@ export async function delUserId(){
 //user id is deleted and sesh cleared
 await AsyncStorage.removeItem(AUTH_KEY);
 }
+
+export class ApiError extends Error {
+  status: number;
+  bodyText: string;
+
+  constructor(status: number, bodyText: string) {
+    super(`Request failed (${status})`);
+    this.status = status;
+    this.bodyText = bodyText;
+  }
+}
+
+async function requestJson<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers = {
+    ...(await authHeaders()),
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const text = await res.text();
+
+  if (!res.ok) {
+    throw new ApiError(res.status, text);
+  }
+
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
+function travelQuery(origin: string, destination: string, arrivalTime?: string): string {
+  const params =
+    `?origin=${encodeURIComponent(origin.trim())}` +
+    `&destination=${encodeURIComponent(destination)}` +
+    (arrivalTime ? `&arrivalTime=${encodeURIComponent(arrivalTime)}` : "");
+  return params;
+}
+
+export const modulesApi = {
+  list: (userId: number) => requestJson<ModuleDto[]>(`/users/${userId}/modules`),
+
+  create: (userId: number, body: { code: string; name: string; credits: number | null }) =>
+    requestJson<ModuleDto>(`/users/${userId}/modules`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (
+    userId: number,
+    moduleId: number,
+    patch: Partial<{ code: string; name: string; credits: number | null }>
+  ) =>
+    requestJson<ModuleDto>(`/users/${userId}/modules/${moduleId}`, {
+      method: "PUT",
+      body: JSON.stringify(patch),
+    }),
+
+  remove: (userId: number, moduleId: number) =>
+    requestJson<void>(`/users/${userId}/modules/${moduleId}`, { method: "DELETE" }),
+};
+
+export const courseworkApi = {
+  listAll: (userId: number) => requestJson<CourseworkDto[]>(`/users/${userId}/coursework`),
+
+  create: (
+    userId: number,
+    moduleId: number,
+    body: { title: string; dueDate: string; weighting: number | null; onSite: boolean; location: string | null }
+  ) =>
+    requestJson<CourseworkDto>(`/users/${userId}/modules/${moduleId}/coursework`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  update: (
+    userId: number,
+    moduleId: number,
+    courseworkId: number,
+    patch: Partial<{
+      title: string;
+      dueDate: string;
+      weighting: number | null;
+      completed: boolean;
+      scorePercent: number | null;
+      onSite: boolean;
+      location: string | null;
+    }>
+  ) =>
+    requestJson<CourseworkDto>(`/users/${userId}/modules/${moduleId}/coursework/${courseworkId}`, {
+      method: "PUT",
+      body: JSON.stringify(patch),
+    }),
+
+  remove: (userId: number, moduleId: number, courseworkId: number) =>
+    requestJson<void>(`/users/${userId}/modules/${moduleId}/coursework/${courseworkId}`, {
+      method: "DELETE",
+    }),
+};
+
+export const preferencesApi = {
+  get: (userId: number) => requestJson<UserPrefDto>(`/users/${userId}/preferences`),
+
+  update: (userId: number, body: { homeAddress: string; UniLoc: string; bufferMins: number }) =>
+    requestJson<UserPrefDto>(`/users/${userId}/preferences`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+};
+
+export const travelApi = {
+  //calls backend /travel which proxies to google routes and returns seconds + fallback flag
+  async getDurationMinutes(origin: string, destination: string, arrivalTime?: string): Promise<number | null> {
+    if (!origin || origin.trim() === "") return null;
+
+    try {
+      const json = await requestJson<{ seconds: number; fallback: boolean }>(
+        `/travel${travelQuery(origin, destination, arrivalTime)}`
+      );
+
+      //if backend says fallback=true, it couldn't reach google -> null so local estimate is used
+      if (json.fallback || json.seconds <= 0) return null;
+
+      return Math.ceil(json.seconds / 60); // seconds -> mins (round up so you don't underestimate)
+    } catch {
+      return null;
+    }
+  },
+
+  //calls backend to get full route details
+  async getDetails(origin: string, destination: string, arrivalTime?: string): Promise<TravelDetails | null> {
+    if (!origin || origin.trim() === "") return null;
+
+    try {
+      const json = await requestJson<TravelDetails>(`/travel/details${travelQuery(origin, destination, arrivalTime)}`);
+
+      if (json.fallback) return null;
+
+      return json;
+    } catch {
+      return null;
+    }
+  },
+};
+
+export const accountApi = {
+  requestDeleteCode: (userId: number) =>
+    requestJson<{ message: string }>(`/users/${userId}/delete-account/request-code`, { method: "POST" }),
+
+  deleteAccount: (userId: number, code: string) =>
+    requestJson<{ message: string }>(`/users/${userId}`, {
+      method: "DELETE",
+      body: JSON.stringify({ code }),
+    }),
+};
+
+export const authApi = {
+  requestCode: (email: string) =>
+    requestJson<{ message: string }>(`/auth/request-code`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  verifyCode: (email: string, code: string) =>
+    requestJson<{ userId: number }>(`/auth/verify-code`, {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
+};

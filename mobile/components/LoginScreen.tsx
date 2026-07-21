@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ActivityIndicator,Alert,KeyboardAvoidingView,Platform,Pressable,SafeAreaView,
   StyleSheet,Text,TextInput,View,} from "react-native";
-import {API_BASE, authHeaders, getUserId} from "@/lib/api";
+import {authApi, ApiError} from "@/lib/api";
 
 
 type Props = {
@@ -27,21 +27,18 @@ export default function LoginScreen({ onLogin }: Props) {
     setLoading(true);
     try {
 
-      const res = await fetch(`${API_BASE}/auth/request-code`, {
-
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmed }),
-      });
-      const json = await res.json();
-      if (!res.ok) { Alert.alert("Error", json.error ?? "Failed to send code.");
-        return;
-      }
+      await authApi.requestCode(trimmed);
 
       //move to verif after backend accepts email
       setSentTo(trimmed);
       setStep("code");
-    } catch (e: any) {Alert.alert("Network error", String(e?.message ?? e));
+    } catch (e: any) {
+      if (e instanceof ApiError) {
+        const parsed = (() => { try { return JSON.parse(e.bodyText); } catch { return null; } })();
+        Alert.alert("Error", parsed?.error ?? "Failed to send code.");
+      } else {
+        Alert.alert("Network error", String(e?.message ?? e));
+      }
     } finally {setLoading(false);}
   }
 
@@ -61,21 +58,16 @@ export default function LoginScreen({ onLogin }: Props) {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/verify-code`, {
-
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, code: trimmedCode }),
-
-      });
-      const json = await res.json();
-      if (!res.ok) {Alert.alert("error", "Can't sent verification cocde, check your entered email and try again");
-        return;
-      }
+      const json = await authApi.verifyCode(trimmedEmail, trimmedCode);
 
       //successful verf returns userId to pass into auth state
       onLogin(Number(json.userId));
-    } catch (e: any) {Alert.alert("Network error", "Can't connect to the backend, run it and try again");
+    } catch (e: any) {
+      if (e instanceof ApiError) {
+        Alert.alert("error", "Can't sent verification cocde, check your entered email and try again");
+      } else {
+        Alert.alert("Network error", "Can't connect to the backend, run it and try again");
+      }
     } finally {setLoading(false);}
   }
 

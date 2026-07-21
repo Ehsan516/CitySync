@@ -1,6 +1,6 @@
 package com.citysync.backend.coursework;
 
-import com.citysync.backend.OwnershipCheck;
+import com.citysync.backend.security.OwnershipCheck;
 import com.citysync.backend.module.Module;
 import com.citysync.backend.module.ModuleRepository;
 import com.citysync.backend.user.UserRepo;

@@ -70,7 +70,7 @@ export default function OnBoardingScreen() {
                     <Text style = {styles.linkText}> Open my timetable help </Text>
                     </Pressable>
 
-                    <View styles={styles.btnGap}>
+                    <View style={styles.btnGap}>
 
                     <PrimBtn title = "Select my uni calendar" onPress={() => router.push("/(tabs)/calendarSettings")}/>
                     <SecBtn title = "I'll do this later" onPress={nextStep}/>

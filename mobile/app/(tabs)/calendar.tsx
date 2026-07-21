@@ -1,263 +1,25 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, SafeAreaView, Text, View, Modal, Pressable,ScrollView, StyleSheet, Switch } from "react-native";
+import { Alert, SafeAreaView, Text, View, Modal, Pressable, ScrollView, StyleSheet, Switch } from "react-native";
 import * as Calendar from "expo-calendar";
-import * as Notifications from "expo-notifications";
 
-
-import { getSelectedCalendarIds } from "@/lib/calendarPrefs";
-import { getUserId, authHeaders, API_BASE } from "@/lib/api";
+import { getSelectedCalendarIds, getOnSiteToday, setOnSiteToday } from "@/lib/prefs";
+import { getUserId, courseworkApi, preferencesApi, travelApi } from "@/lib/api";
+import { startOfWeek, addDays, ymd } from "@/lib/dateUtils";
+import type { CourseworkDto, TravelDetails, UnifiedItem } from "@/lib/types";
 import UnifiedWeekView from "@/components/calendar/UnifiedWeekView";
-import {getOnSiteToday, setOnSiteToday} from "@/lib/onSitePrefs";
+import {
+  cancelAllLeaveSoonNotifs,
+  calcLeaveTime,
+  estimateMinsHomeUnifb,
+  persistLeaveSoonNotifIds,
+  scheduleTravelNotifs,
+} from "@/src/notifications/leaveSoonNotifications";
 
 const CityCampDest = "City St George's, University of London, Northampton Square, London EC1V 0HB";
-
-//stores leave notification ids so we can cancel them on reload
-const leavenotif = "citysync.leaveSoonNotifIds.v1";
-
-const getReadyMins=20; //20 min buffer before leave time
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
-type CourseworkDto = {
-  id: number;
-  moduleId: number;
-  userId: number;
-  title: string;
-  dueDate: string;
-  weighting: number | null;
-  onSite: boolean;
-  location: string | null;
-};
-type UnifiedItem = {
-//calendar or coursework items on cal view
-  key: string;
-  source: "timetable" | "coursework";
-  title: string;
-  start: Date;
-  end: Date;
-  location?: string;
-  meta?: string;
-  onSite?: boolean;
-};
-
-
-type UserPrefDto ={
-    homeAddress: string | null;
-    UniLoc: string | null;
-    bufferMins: number | null;
-    //same json user preferences for home loc, uni loc and time buffer for backend
-}
-
-type routeStepDto = {
-    mode: string; instruction: string; durationSeconds: number | null;
-    departureStop: string | null; arrivalStop: string | null; lineName: string | null;
-    vehicleType: string | null; headSign: string | null;
-};//one step in jounrey
-
-type travelDeets = {fallback: boolean; durationSeconds: number | null; summary: string | null; steps: routeStepDto[];};
-//full journey from backend
-
-function startOfWeek(d: Date) {
-  //monday-start week
-  const x = new Date(d);
-  const day = x.getDay(); // 0 sun and 6 is sat
-  const diff = (day === 0 ? -6 : 1) - day;
-  x.setDate(x.getDate() + diff);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function addDays(d: Date, days: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + days);
-  return x;
-}
-
-function ymd(d: Date) {
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
 
 function parseCwDate(dateTimeString: string) {
     return new Date(dateTimeString);
     //full iso string for cw items for calendar view
-}
-
-async function fetchTravelMins(home: string, destination: string, arrivalTime?: string): Promise<number | null> {
-  //calls backend /travel which proxies to google routes and returns seconds + fallback flag
-  if (!home || home.trim() === "") return null;
-
-  try {
-
-    const url =
-      `${API_BASE}/travel` +
-      `?origin=${encodeURIComponent(home.trim())}` + //encode so spaces/postcodes work in a URL
-      `&destination=${encodeURIComponent(destination)}`+//spaces in location/postcode don't break url
-      (arrivalTime ? `&arrivalTime=${encodeURIComponent(arrivalTime)}`:"");
-
-    const res = await fetch(url, {
-      headers: await authHeaders(),
-    });
-    if (!res.ok) return null;
-
-    const json = (await res.json()) as { seconds: number; fallback: boolean };
-
-    //if backend says fallback=true, it couldn't reach google -> return null so our local estimator is used
-    if (json.fallback || json.seconds <= 0) return null;
-
-    return Math.ceil(json.seconds / 60); // seconds -> mins (round up so you don't underestimate)
-  } catch {
-
-    return null;
-  }
-}
-
-async function fetchTravelDetails(
-//calls backend to get full route details
-  home: string,
-  destination: string,
-  arrivalTime?: string
-): Promise<travelDeets | null> {
-  if (!home || home.trim() === "") return null;//can't compute route if no home address
-
-  try {//url qith query params
-    const url =
-      `${API_BASE}/travel/details` +
-      `?origin=${encodeURIComponent(home.trim())}` +//encode because url break gave me error
-      `&destination=${encodeURIComponent(destination)}` +
-      (arrivalTime ? `&arrivalTime=${encodeURIComponent(arrivalTime)}` : "");
-
-    const res = await fetch(url, {
-    //call backend with auth headers
-      headers: await authHeaders(),
-    });
-
-    if (!res.ok) return null;//null if reqfails
-
-    const json = (await res.json()) as travelDeets;//json parsed
-
-    if (json.fallback) return null;
-    //null if no real route way
-
-    return json;
-  } catch {
-    return null;
-    //any other errors like netwrok
-  }
-}
-
-function estimateMinsHomeUnifb(home: string) {
-  if (!home || home.trim() === "") return null;
-
-  /**for now until GMatrix so if they only postcode, assume 45 mins
-    else full address = 50 mins*/
-  const looksLikePostcode = home.length <= 10;
-  return looksLikePostcode ? 45 : 50;
-}
-
-function calcLeaveTime(eventStart: Date, travelMins: number, bufferMins: number) {
-  const ms = (travelMins + bufferMins) * 60_000;
-  return new Date(eventStart.getTime() - ms);
-}
-
-async function cancelAllLeaveSoonNotifs() {
-  //cancel all previous leave-soon notifications so we don't stack duplicates on every reload
-  try {
-
-    const { default: AsyncStorage } = await import("@react-native-async-storage/async-storage");
-
-    const raw = await AsyncStorage.getItem(leavenotif);
-    if (!raw) return;
-
-    const ids = JSON.parse(raw) as string[];
-
-    await Promise.all(
-      ids.map(async (id) => {
-        try {
-          await Notifications.cancelScheduledNotificationAsync(id);
-        } catch {
-          //ignore if already cancelled/expired
-        }
-      })
-    );
-
-    await AsyncStorage.removeItem(leavenotif);
-
-  } catch {
-    //ignore storage errors
-  }
-}
-
-async function ensureNotifPerms(): Promise<boolean>{
-    let perms = await Notifications.getPermissionsAsync();
-        if (!perms.granted){
-        perms = await Notifications.requestPermissionsAsync();}
-
-        return perms.granted;
-}
-
-async function scheduleTravelNotifs(
-    eventTitle: string,
-    leaveAt: Date,
-    travelMins: number,
-    bufferMins: number,
-    skip: boolean
-
-): Promise<string[]>{
-    if (skip) return [];
-
-    const granted = await ensureNotifPerms();
-    if(!granted) return [];
-
-    const ids: string[]=[];
-    const now = Date.now();
-
-    const getReadyAt = new Date(leaveAt.getTime()- getReadyMins * 60_000);
-    //fires before leave time
-
-    if(getReadyAt.getTime() > now){
-        try{const id = await Notifications.scheduleNotificationAsync({
-            content: {
-                title: "CitySync: Get Ready!",body:`leave for "${eventTitle}" in ${getReadyMins} minutes, get ready now.`,
-                data: {type: "get_ready", eventTitle},
-            },trigger:{
-                type: "date" as const, date: getReadyAt,
-            },
-            });
-
-            ids.push(id);
-            console.log(`CitySync get ready notf for "${eventTitle}" at ${getReadyAt.toISOString()}`);
-            }catch(e){
-                console.log(`[CitySync] get ready schedule failed:`, e);
-            }//for debug
-        }
-
-    if (leaveAt.getTime() > now) {
-      try {
-        const id = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: "CitySync: Time to leave!",
-            body: `Leave now for "${eventTitle}" — ${travelMins} min journey + ${bufferMins} min buffer`,
-            data: { type: "leave_soon", eventTitle },
-          },
-          trigger: {type: "date" as const,date: leaveAt,},
-        });
-
-        ids.push(id);
-        console.log(`[CitySync] leave notif for "${eventTitle}" at ${leaveAt.toISOString()}`);
-      } catch (e) {
-        console.log(`[CitySync] leave schedule failed:`, e)}
-    }//debugging again
-
-    return ids;
 }
 
 export default function CalendarScreen() {
@@ -279,7 +41,7 @@ export default function CalendarScreen() {
   const[routeModalVisible, setRouteModalVisible] = useState(false);//toggling route modal screen
   const[routeLoading, setRouteLoading] = useState(false);//show loading state while fetching route
 
-  const[selectedRoute,setSelectedRoute] = useState<travelDeets | null>(null);
+  const[selectedRoute,setSelectedRoute] = useState<TravelDetails | null>(null);
   const[selectedRouteTitle,setSelectedRouteTitle] = useState("");
   //stores selected route and event title
 
@@ -303,14 +65,7 @@ export default function CalendarScreen() {
     try{
         const USER_ID = await getUserId();//gets user id when logged in to fetch pref
 
-        const res = await fetch(`${API_BASE}/users/${USER_ID}/preferences`,{
-            headers: await authHeaders(),
-            //calls backend and gets the jwt
-        });
-        if (!res.ok){ return;}//skips if req fails
-
-        const prefs = (await res.json()) as UserPrefDto;
-        //prefs ack to ts object form json
+        const prefs = await preferencesApi.get(USER_ID);
 
         setBuffer(prefs.bufferMins ?? 10);//if no val from backend then 10 default
         setHomeLocationState(prefs.homeAddress ?? "");
@@ -348,7 +103,7 @@ export default function CalendarScreen() {
       const arrivalTime = item.source === "coursework" ? item.end.toISOString() : item.start.toISOString();//correct arrival time for backend
                                                                                   //^start arrive at beginning of lecture
 
-       const details = await fetchTravelDetails(//func to fetch route details form backend
+       const details = await travelApi.getDetails(//func to fetch route details form backend
         homeLocation,
         targetDest,
         arrivalTime
@@ -374,18 +129,14 @@ export default function CalendarScreen() {
     try {
       const USER_ID = await getUserId();
 
-      const prefsRes = await fetch(`${API_BASE}/users/${USER_ID}/preferences`, {
-        headers: await authHeaders(),//fetching user perfs and using authtoken to allow it
-      });
-
       let currentBuffer = 10;
       let currentHome = "";
       let currentDest = CityCampDest;
       //temp prefs in case api fails^
 
-      if (prefsRes.ok) {
-        const prefs = (await prefsRes.json()) as UserPrefDto;
-        ///response to userpref dto using await for async parse
+      try {
+        const prefs = await preferencesApi.get(USER_ID);
+        //response to userpref dto using await for async parse
 
         currentBuffer = prefs.bufferMins ?? 10;
         currentHome = prefs.homeAddress ?? "";
@@ -396,6 +147,8 @@ export default function CalendarScreen() {
         setHomeLocationState(currentHome);
         setDestination(currentDest);
         //react state updates for ui
+      } catch {
+        //keep defaults if prefs fetch fails
       }
 
       const onSite = await getOnSiteToday();
@@ -452,8 +205,6 @@ export default function CalendarScreen() {
 
       const scheduledNotifIds: string[] = [];
 
-      const { default: AsyncStorage } = await import("@react-native-async-storage/async-storage");
-
       const timetableItems: UnifiedItem[] = await Promise.all(
         deviceEvents.map(async (e) => {
           const start = new Date(e.startDate);
@@ -469,7 +220,7 @@ export default function CalendarScreen() {
           //fixed destination so travel should be Home to City campus
           const eventArrivalTime =start.toISOString();
 
-          const liveTravelMins = await fetchTravelMins(currentHome,currentDest, eventArrivalTime);
+          const liveTravelMins = await travelApi.getDurationMinutes(currentHome,currentDest, eventArrivalTime);
           const travelMins = liveTravelMins ?? estimateMinsHomeUnifb(currentHome);
 
           if (travelMins != null) {
@@ -488,8 +239,6 @@ export default function CalendarScreen() {
             routeMeta = "Set home address in preferences to get leave time";
           }
 
-          // const calMeta = e.calendarId ? `Calendar: ${e.calendarId}` : "";
-
           }
           const calName = calendars.find((c) => c.id === e.calendarId)?.title ?? e.calendarId;
           const calMeta = calName ? `Calendar ${calName}` : "";
@@ -497,25 +246,19 @@ export default function CalendarScreen() {
 
           const meta = [leaveMeta, routeMeta, calMeta].filter(Boolean).join(" • ") || undefined;
 
-          return {key: `tt-${e.id}`,source: "timetable", title: e.title ?? "(no title)",start,end,location,meta,};
+          return {key: `tt-${e.id}`,source: "timetable" as const, title: e.title ?? "(no title)",start,end,location,meta,};
         })
       );
 
-
-//       const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-//       console.log("[CitySync] All scheduled:", JSON.stringify(scheduled, null, 2));
-
       setStatus("loading coursework from backend...");
-      const cwRes = await fetch(`${API_BASE}/users/${USER_ID}/coursework`, {
-        headers: await authHeaders(),
-      });
-      if (!cwRes.ok) {
-        const txt = await cwRes.text();
-        Alert.alert("Coursework load failed", `${cwRes.status}\n${txt}`);
-        setStatus(`coursework load failed ${cwRes.status}`);
+      let coursework: CourseworkDto[];
+      try {
+        coursework = await courseworkApi.listAll(USER_ID);
+      } catch (e: any) {
+        Alert.alert("Coursework load failed", String(e?.bodyText ?? e?.message ?? e));
+        setStatus(`coursework load failed`);
         return;
       }
-      const coursework = (await cwRes.json()) as CourseworkDto[];
 
       const courseworkItems: UnifiedItem[] = await Promise.all( //cw items with travel and notificaiton info
         coursework.map(async (c) => {
@@ -534,7 +277,7 @@ export default function CalendarScreen() {
 
             const arrivalTime = end.toISOString();//cw arrival time is deadline
 
-            const liveTravelMins = await fetchTravelMins(//getting live travel time from backend
+            const liveTravelMins = await travelApi.getDurationMinutes(//getting live travel time from backend
               currentHome,
               location ?? currentDest,
               arrivalTime
@@ -578,7 +321,7 @@ export default function CalendarScreen() {
 
           return {//unified calender item
             key: `cw-${c.id}`,
-            source: "coursework",
+            source: "coursework" as const,
             title: c.title,
             start,end,
             location,onSite: c.onSite,
@@ -587,9 +330,7 @@ export default function CalendarScreen() {
         })
       );
 
-      if (scheduledNotifIds.length > 0) {//persists notf ids for timetable and cw
-        await AsyncStorage.setItem(leavenotif, JSON.stringify(scheduledNotifIds));
-      }
+      await persistLeaveSoonNotifIds(scheduledNotifIds);//persists notf ids for timetable and cw
 
       const merged = [...timetableItems, ...courseworkItems].filter(//merge tt and cw in a week list
         (it) => it.start >= weekStart && it.start < weekEnd

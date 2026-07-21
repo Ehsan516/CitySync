@@ -1,24 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Picker } from "@react-native-picker/picker";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "@/hooks/useAuth";
 import HeaderCard from "@/components/home/HeaderCard";
-import { PrimBtn, SecBtn, DangerBtn } from "@/components/home/ActionBtns";
-import type {CourseworkDto} from "@/lib/CwHelpers";
 import GradeCard from "@/components/home/GradeCard";
+import type { CourseworkDto, ModuleDto } from "@/lib/types";
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet,View, Text} from "react-native";
 import ModuleCard from "@/components/home/ModuleCard";
 import CwCard from "@/components/home/CwCard";
-import { getModuleWeightTotal, formatDate, calcGrade, gradeLabel, gradeColour} from "@/lib/CwHelpers"
+import { getModuleWeightTotal, calcOverallGrade, gradeLabel, gradeColour} from "@/lib/CwHelpers"
+import { formatDate } from "@/lib/dateUtils"
 
 
-import {checkNotifPerms, scheduleCourseworkReminders, cancelCourseworkReminders} from "../../src/notifications/cwReminders";
+import {checkNotifPerms, scheduleCourseworkReminders, cancelCourseworkReminders} from "@/src/notifications/cwReminders";
 //^importing to index from cwreminder
-import { getUserId, authHeaders, API_BASE } from "@/lib/api";
-
-
-//type helpers
-type ModuleDto = { id: number; userId: number; code: string; name: string; credits: number | null };
+import { getUserId, modulesApi, courseworkApi } from "@/lib/api";
 
 
 export default function HomeScreen() {
@@ -67,18 +61,7 @@ export default function HomeScreen() {
       const USER_ID = await getUserId();
       setUserId(USER_ID);
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/modules`, {
-        headers: await authHeaders(),
-      });
-      const txt = await res.text(); //read as text first for dbugging
-
-      if (!res.ok) {
-        setStatus(`Load modules failed ${res.status}`);
-        Alert.alert("Load modules failed", `${res.status}\n${txt}`);
-        return;
-      }
-
-      const json = JSON.parse(txt) as ModuleDto[];
+      const json = await modulesApi.list(USER_ID);
       setModules(json);
 
       if (json.length > 0 && selectedModuleId == null) {
@@ -91,7 +74,7 @@ export default function HomeScreen() {
     } catch (e: any) {
 
       setStatus("load modules error");
-      Alert.alert("Load modules error", String(e?.message ?? e));
+      Alert.alert("Load modules error", String(e?.bodyText ?? e?.message ?? e));
 
     }
   }
@@ -104,24 +87,13 @@ export default function HomeScreen() {
       const USER_ID = await getUserId();
       setUserId(USER_ID);
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/coursework`, {
-        headers: await authHeaders(),
-      });
-      if (!res.ok) {
-
-        const txt = await res.text();
-        setStatus(`load coursework failed ${res.status}`);
-        Alert.alert("Load coursework failed", `${res.status}\n${txt}`);
-
-        return;
-      }
-      const json = (await res.json()) as CourseworkDto[];
+      const json = await courseworkApi.listAll(USER_ID);
       setCoursework(json);
       setStatus(`loaded ${json.length} coursework`);
     } catch (e: any) {
 
       setStatus("load coursework error");
-      Alert.alert("Load coursework error", String(e?.message ?? e));
+      Alert.alert("Load coursework error", String(e?.bodyText ?? e?.message ?? e));
 
     }
   }
@@ -134,28 +106,11 @@ export default function HomeScreen() {
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/modules`, {
-        method: "POST",
-        headers: {
-          ...(await authHeaders()),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: mCode,
-          name: mName,
-          credits: mCredits.trim() === "" ? null : Number(mCredits),
-        }),
+      await modulesApi.create(USER_ID, {
+        code: mCode,
+        name: mName,
+        credits: mCredits.trim() === "" ? null : Number(mCredits),
       });
-
-      const txt = await res.text();
-
-      if (!res.ok) {
-
-        setStatus(`create module failed ${res.status}`);
-        Alert.alert("Create Module failed", `${res.status}\n${txt}`);
-        return;
-
-      }
 
       setStatus("module created, refreshing...");
       await loadModules();//refresh list after succesful create
@@ -163,7 +118,7 @@ export default function HomeScreen() {
     } catch (e: any) {
 
       setStatus("create module error");
-      Alert.alert("Creaet Module error", String(e?.message ?? e));
+      Alert.alert("Creaet Module error", String(e?.bodyText ?? e?.message ?? e));
 
     }
   }
@@ -201,30 +156,13 @@ export default function HomeScreen() {
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/modules/${selectedModuleId}/coursework`, {
-        method: "POST",
-        headers: {
-          ...(await authHeaders()),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: cwTitle,
-          dueDate: formatDate(cwDueDateObj),
-          weighting: newWeight,
-          onSite: cwOnSite,
-          location: cwOnSite ? cwLocation.trim() : null,
-        }),
+      const created = await courseworkApi.create(USER_ID, selectedModuleId, {
+        title: cwTitle,
+        dueDate: formatDate(cwDueDateObj),
+        weighting: newWeight,
+        onSite: cwOnSite,
+        location: cwOnSite ? cwLocation.trim() : null,
       });
-
-      if (!res.ok) {//for backend failurs
-
-        const txt = await res.text();
-        setStatus(`create coursework failed ${res.status}`);
-        Alert.alert("Create coursework failed", `${res.status}\n${txt}`);
-        return;
-      }
-
-      const created = (await res.json()) as CourseworkDto;//new created cw parsed from backend
 
       const ok = await checkNotifPerms ();//to check notif permission and schedule reminders
       if(ok){
@@ -235,7 +173,7 @@ export default function HomeScreen() {
       await loadCoursework();//refresh list after successful create
         } catch (e: any) {
           setStatus("Create Coursework error");
-          Alert.alert("Create Coursework error", String(e?.message ?? e));
+          Alert.alert("Create Coursework error", String(e?.bodyText ?? e?.message ?? e));
 
         }
 
@@ -254,28 +192,7 @@ export default function HomeScreen() {
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(//HTTP PUT request to backend
-        `${API_BASE}/users/${USER_ID}/modules/${moduleId}`,
-        {
-          method: "PUT",
-          headers: {
-            ...(await authHeaders()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(patch),//js object to JSON string
-        }
-      );
-
-      if (!res.ok) {
-
-        //read any error message body
-        const txt = await res.text();
-
-        setStatus(`update module failed ${res.status}`);//Ui status show failure
-        Alert.alert("Update Module failed", `${res.status}\n${txt}`);
-
-        return;
-      }
+      await modulesApi.update(USER_ID, moduleId, patch);
 
       //if success then reload module list to show new changes
       await loadModules();
@@ -285,7 +202,7 @@ export default function HomeScreen() {
     } catch (e: any) {
 
       setStatus("update module error");
-      Alert.alert("Update Module error", String(e?.message ?? e));
+      Alert.alert("Update Module error", String(e?.bodyText ?? e?.message ?? e));
 
     }
   }
@@ -300,27 +217,7 @@ export default function HomeScreen() {
 
       const USER_ID = await getUserId();
 
-      //HTTP delete request
-      const res = await fetch(
-        `${API_BASE}/users/${USER_ID}/modules/${moduleId}`,
-        {
-          method: "DELETE", //
-          headers: await authHeaders(),
-        }
-      );
-
-      //if backend returns failure
-      if (!res.ok) {
-
-        const txt = await res.text();
-
-        setStatus(`delete module failed ${res.status}`);
-
-        Alert.alert("Delete Module failed", `${res.status}\n${txt}`);
-
-        return;
-      }
-
+      await modulesApi.remove(USER_ID, moduleId);
 
       await loadModules();//refreshes modules list after deletion
       await loadCoursework();//reload coursework after module and coursework deletion
@@ -329,7 +226,7 @@ export default function HomeScreen() {
 
     } catch (e: any) {
       setStatus("delete module error");
-      Alert.alert("Delete Module error", String(e?.message ?? e));
+      Alert.alert("Delete Module error", String(e?.bodyText ?? e?.message ?? e));
     }
   }
 
@@ -361,35 +258,14 @@ export default function HomeScreen() {
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(
-        `${API_BASE}/users/${USER_ID}/modules/${item.moduleId}/coursework/${item.id}`,
-        {
-
-          method: "PUT",
-          headers: {
-
-            ...(await authHeaders()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-
-            title: newTitle,dueDate: formatDate(newDueDate),weighting: newWeighting,
-            scorePercent: editScorePercent.trim() === "" ? null : Number(editScorePercent.trim()),
-            onSite: editOnSite, location: editOnSite ? editLocation.trim() : null,
-          }),
-
-        }
-      );
-
-      if (!res.ok) {
-
-        const txt = await res.text();
-        setStatus(`update coursework failed ${res.status}`);
-        Alert.alert("Update Coursework failed", `${res.status}\n${txt}`);
-        return;
-      }
-
-      const updated = (await res.json()) as CourseworkDto;
+      const updated = await courseworkApi.update(USER_ID, item.moduleId, item.id, {
+        title: newTitle,
+        dueDate: formatDate(newDueDate),
+        weighting: newWeighting,
+        scorePercent: editScorePercent.trim() === "" ? null : Number(editScorePercent.trim()),
+        onSite: editOnSite,
+        location: editOnSite ? editLocation.trim() : null,
+      });
 
       const ok = await checkNotifPerms();
       if (ok && !updated.completed) {
@@ -410,7 +286,7 @@ export default function HomeScreen() {
     } catch (e: any) {
 
       setStatus("update coursework error");
-      Alert.alert("Update Coursework error", String(e?.message ?? e));
+      Alert.alert("Update Coursework error", String(e?.bodyText ?? e?.message ?? e));
 
     }
   }
@@ -424,28 +300,7 @@ export default function HomeScreen() {
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(
-        `${API_BASE}/users/${USER_ID}/modules/${item.moduleId}/coursework/${item.id}`,
-        {
-
-          method: "PUT",
-          headers: {
-            ...(await authHeaders()),
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ completed }),
-        }
-      );
-
-      if (!res.ok) {
-
-        const txt = await res.text();
-        Alert.alert("Update failed", `${res.status}\n${txt}`);
-        return;
-
-      }
-
-      const updated = (await res.json()) as CourseworkDto;//parse updated cw from backend
+      const updated = await courseworkApi.update(USER_ID, item.moduleId, item.id, { completed });
 
       const ok = await checkNotifPerms();//to check notification perms enabled
       if(ok){
@@ -463,7 +318,7 @@ export default function HomeScreen() {
 
       setStatus(`coursework ${item.id} completed=${completed}`);
     } catch (e: any) {
-      Alert.alert("Update error", String(e?.message ?? e));
+      Alert.alert("Update error", String(e?.bodyText ?? e?.message ?? e));
 
     }
 
@@ -473,20 +328,8 @@ export default function HomeScreen() {
     setStatus("deleteing coursework..");
     try{
         const USER_ID = await getUserId();//gets user id
-        const res = await fetch (
-        `${API_BASE}/users/${USER_ID}/modules/${item.moduleId}/coursework/${item.id}`,
-            {//delete req to backend with auth token added
-                method: "DELETE",
-                headers: await authHeaders(),
-            }
-        );
 
-        if(!res.ok){
-            const txt = await res.text();
-            setStatus(`delete coursewrok failed ${res.status}` );
-            Alert.alert("Delete coursework failed", `${res.status}\n${txt}`);
-            return;//stops executing if error returned
-        }
+        await courseworkApi.remove(USER_ID, item.moduleId, item.id);
 
         await cancelCourseworkReminders(item.id); //removes reminders for cw deleted
         setStatus(`deleted coursework ${item.id}`);
@@ -495,7 +338,7 @@ export default function HomeScreen() {
 
         } catch (e: any){//for network erros /crashes
             setStatus("delete cw error");
-            Alert.alert("Delete cw error",String(e?.message ?? e));
+            Alert.alert("Delete cw error",String(e?.bodyText ?? e?.message ?? e));
         }
 
  }
@@ -504,7 +347,6 @@ export default function HomeScreen() {
 
     setEditingCwId(item.id);
     setEditTitle(item.title);
-//     setEditDueDate(item.dueDate);
     setEditDueDateObj(new Date(item.dueDate));
     setEditWeighting(item.weighting != null ? String(item.weighting) : "");
     setEditScorePercent(item.scorePercent != null ? String(item.scorePercent) : "");
@@ -522,33 +364,7 @@ export default function HomeScreen() {
     };
   }, [modules.length, coursework]);
 
-  const overallGrade = useMemo(() => {
-      let weightedSum = 0;
-      let totalCredits = 0;
-
-      for (const module of modules){
-        if(module.credits == null || module.credits <= 0) continue;
-          //skips modules with no credit values
-
-        const cwForModule= coursework.filter((c) => c.moduleId === module.id);
-        const grade = calcGrade(cwForModule);
-
-        if(!grade) continue;
-        //skip if no grading info
-
-        if(grade.remainingWeight !== 0) continue;//onlw includes modules where all allocated cw is complete
-
-      weightedSum += grade.confirmedMark * module.credits;
-      totalCredits += module.credits;
-    }
-
-    if(totalCredits === 0) return null;
-
-    const percent = Math.round((weightedSum/totalCredits) *100)/100;
-
-    return{percent, creditsUsed: totalCredits,};
-
-    }, [modules, coursework]);
+  const overallGrade = useMemo(() => calcOverallGrade(modules, coursework), [modules, coursework]);
 
   //on screen load fetch both lists
   useEffect(() => {
@@ -625,7 +441,6 @@ export default function HomeScreen() {
             setCwWeighting={setCwWeighting}
             createCoursework={createCoursework}
             editingCwId={editingCwId}
-            setEditingCwId={setEditingCwId}
             editTitle={editTitle}
             setEditTitle={setEditTitle}
             editDueDateObj={editDueDateObj}
@@ -672,4 +487,3 @@ const styles = StyleSheet.create({
     gap: 14,
   },
 });
-

@@ -2,16 +2,7 @@ import React from "react";
 import {View, Text, TextInput, FlatList, Button, Alert, StyleSheet,} from "react-native";
 import { DangerBtn, PrimBtn} from "@/components/home/ActionBtns";
 import GradeCard from "@/components/home/GradeCard";
-import type { CourseworkDto } from "@/lib/CwHelpers";
-
-type ModuleDto = {
-//front module shape from backend
-    id: number;
-    userId: number;
-    code: string;
-    name: string;
-    credits: number | null;
-};
+import type { CourseworkDto, ModuleDto } from "@/lib/types";
 
 type Props = {
 
@@ -91,7 +82,7 @@ export default function ModuleCard({//card for module ctreation and display
                           "Enter a new module name",
                           [
                             { text: "Cancel", style: "cancel" },
-                            {text: "Save",onPress: (value) => {
+                            {text: "Save",onPress: (value?: string) => {
 
                                 const nextName = value?.trim();
                                 if (!nextName) return;

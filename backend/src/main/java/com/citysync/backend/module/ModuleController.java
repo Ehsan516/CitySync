@@ -1,6 +1,6 @@
 package com.citysync.backend.module;
 
-import com.citysync.backend.OwnershipCheck;
+import com.citysync.backend.security.OwnershipCheck;
 import com.citysync.backend.user.User;
 import com.citysync.backend.user.UserRepo;
 import org.springframework.http.ResponseEntity;

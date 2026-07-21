@@ -1,6 +1,6 @@
 package com.citysync.backend.user;
 
-import com.citysync.backend.OwnershipCheck;
+import com.citysync.backend.security.OwnershipCheck;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;

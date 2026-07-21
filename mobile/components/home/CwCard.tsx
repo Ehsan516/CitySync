@@ -3,12 +3,9 @@ import {View,Text, TextInput, FlatList, Pressable, StyleSheet, Alert,Switch} fro
 import {Picker} from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { PrimBtn, SecBtn, DangerBtn } from "@/components/home/ActionBtns";
-import type { CourseworkDto } from "@/lib/CwHelpers";
-import { formatDate, formatTime, getReminderLevel } from "@/lib/CwHelpers";
-
-
-type ModuleDto = {id: number; userId: number; code: string; name: string; credits: number | null;};
-//unique module id, owner of module, m,odule code, name, credits
+import type { CourseworkDto, ModuleDto } from "@/lib/types";
+import { formatDate, formatTime } from "@/lib/dateUtils";
+import { getReminderLevel } from "@/lib/CwHelpers";
 
 type Props = {
   modules: ModuleDto[];

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from "react-native";
 import * as Calendar from "expo-calendar";
-import { getSelectedCalendarIds, setSelectedCalendarIds, clearSelectedCalendarIds,} from "@/lib/calendarPrefs";
+import { getSelectedCalendarIds, setSelectedCalendarIds, clearSelectedCalendarIds,} from "@/lib/prefs";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns";
 
 type CalRow = {//calendar object for rendering

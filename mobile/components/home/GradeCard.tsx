@@ -1,6 +1,6 @@
 import React from "react";
 import {View, Text, StyleSheet} from "react-native";
-import type { CourseworkDto } from "@/lib/CwHelpers";
+import type { CourseworkDto } from "@/lib/types";
 import { calcGrade, gradeColour, gradeLabel } from "@/lib/CwHelpers";
 
 

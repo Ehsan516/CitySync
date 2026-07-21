@@ -1,19 +1,4 @@
-export type CourseworkDto = {
-  id: number;
-  moduleId: number;
-  userId: number;
-  title: string;
-  dueDate: string;
-  weighting: number | null;
-
-  //completion fields
-  completed?: boolean;
-  completedAt?: String | null;
-  scorePercent?: number | null;
-
-  onSite?: boolean;
-  location?: String | null;//whether cw is in-person or not
-};
+import type { CourseworkDto, ModuleDto } from "@/lib/types";
 
 export function calcGrade(cwItems: CourseworkDto[]) {
   //uses only coursework with weightings
@@ -41,36 +26,37 @@ export function calcGrade(cwItems: CourseworkDto[]) {
 
 }
 
+//weighted average of confirmed grades across modules where all allocated coursework is complete
+export function calcOverallGrade(modules: ModuleDto[], coursework: CourseworkDto[]) {
+  let weightedSum = 0;
+  let totalCredits = 0;
 
+  for (const module of modules) {
+    if (module.credits == null || module.credits <= 0) continue;
+    //skips modules with no credit values
+
+    const cwForModule = coursework.filter((c) => c.moduleId === module.id);
+    const grade = calcGrade(cwForModule);
+
+    if (!grade) continue;
+    //skip if no grading info
+
+    if (grade.remainingWeight !== 0) continue;//only includes modules where all allocated cw is complete
+
+    weightedSum += grade.confirmedMark * module.credits;
+    totalCredits += module.credits;
+  }
+
+  if (totalCredits === 0) return null;
+
+  const percent = Math.round((weightedSum / totalCredits) * 100) / 100;
+
+  return { percent, creditsUsed: totalCredits };
+}
 
 export function getModuleWeightTotal(moduleId: number, coursework: CourseworkDto[], excludeCourseworkId?: number){
     return coursework.filter(c => c.moduleId === moduleId).filter(c => excludeCourseworkId == null || c.id !== excludeCourseworkId)
     .reduce((sum, c) => sum + (c.weighting ?? 0), 0);
-
-}
-
-
-export function formatDate(date: Date){
-  //^js date object to datetime string for backend
-  const year = date.getFullYear();
-  const month = String(date.getMonth() +1).padStart(2, "0");//using pastart sp it's like 01 or 03 instead of 1 or 3
-  const day = String(date.getDate()).padStart(2, "0");
-  //^this also padded to 2 digits
-
-  const hours = String(date.getHours()).padStart(2,"0");
-  const mins = String(date.getMinutes()).padStart(2,"0");
-  const secs="00";//seconds dont matter
-
-   return `${year}-${month}-${day}T${hours}:${mins}:${secs}`;
-
-}
-
-export function formatTime(date: Date) {
-    //only time portion of date for ui
-    const hours = String(date.getHours()).padStart(2,"0");
-    const mins = String(date.getMinutes()).padStart(2,"0");
-
-    return `${hours}:${mins}`;
 
 }
 
@@ -127,7 +113,3 @@ export function gradeColour(pct: number) {
   return "#EF4444";
 
 }
-
-
-
-

@@ -1,44 +1,22 @@
 import * as Notifications from "expo-notifications";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getJSON, setJSON } from "@/lib/storage";
+import { checkNotifPerms } from "@/src/notifications/notificationSetup";
 
+export { checkNotifPerms };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,//how notifications look when received while app is actively open
-  }),
- });
+const StorageKey = "cwNotif_Map";//key to keep mapping between coursework IDs and notification IDs
 
- const StorageKey = "cwNotif_Map";//key to keep mapping between coursework IDs and notification IDs
+type notifMap = Record<string,string[]>;
 
- type notifMap = Record<string,string[]>;
+//load notification mapping from storage
+async function getMap(): Promise<notifMap>{
+  return (await getJSON<notifMap>(StorageKey)) ?? {};
+}
 
- //load notification mapping from storage
- async function getMap(): Promise<notifMap>{
-    const raw = await AsyncStorage.getItem(StorageKey);
-    return raw ? (JSON.parse(raw) as notifMap) : {};
+async function setMap(map: notifMap): Promise<void>{
+  await setJSON(StorageKey, map);
+}
 
- }
-
- async function setMap(map: notifMap): Promise<void>{
-    await AsyncStorage.setItem(StorageKey, JSON.stringify(map));
- }
-
- //save same thing to storage
- export async function checkNotifPerms(): Promise<boolean>{
-    const settings = await Notifications.getPermissionsAsync();
-    if (
-
-        settings.granted || settings.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL//allow if fully granted or prov
-    ) {
-        return true;
-    }
-
-    const req = await Notifications.requestPermissionsAsync();
-    return !!req.granted;
-
- }
 //parse due date string into date object n handles iso timestamps n date-only strings
 function parseDueDate(dueDate: string): Date | null {
   if (!dueDate) return null;
@@ -64,8 +42,6 @@ function atMorningSameDay(d: Date, hour = 9): Date {//returns same calendar day 
 function minusMs(d: Date, ms: number): Date {//minus ms from a date
   return new Date(d.getTime() - ms);
 }
-
-
 
 function isFuture(d: Date): boolean {
   return d.getTime() > Date.now() + 5_000;//prevents scheduling past notifications, 5 second margin
@@ -150,7 +126,7 @@ export async function scheduleCourseworkReminders(//schedule reminder notificati
 
       },
 
-      trigger:{type:"date" as const, date : t.when,},
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t.when },
     });
 
     scheduledIds.push(id);

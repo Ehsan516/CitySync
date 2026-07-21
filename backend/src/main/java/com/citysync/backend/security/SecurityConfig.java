@@ -1,4 +1,4 @@
-package com.citysync.backend;
+package com.citysync.backend.security;
 import org.springframework.context.annotation.Bean;//mark methods that produce beans
 import org.springframework.context.annotation.Configuration;//makes class configuration for spring
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,7 +8,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-public class securitySet {
+public class SecurityConfig {
 
     @Bean //security filter chain in spring container
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

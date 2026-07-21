@@ -1,19 +1,13 @@
 import React, { useEffect, useState } from "react";
 import {Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView,StyleSheet,
   Text, TextInput, View,} from "react-native";
-import { getUserId, authHeaders, API_BASE, delUserId } from "@/lib/api";
+import { getUserId, preferencesApi, accountApi, delUserId } from "@/lib/api";
 import {PrimBtn, DangerBtn} from "@/components/home/ActionBtns";
 import {useAuth} from "@/hooks/useAuth";
 
 const C = { bg: "#0B0B10", card: "#12121A", card2: "#161622", border: "rgba(255,255,255,0.08)",
   text: "#FFFFFF", sub: "rgba(255,255,255,0.72)",muted: "rgba(255,255,255,0.45)",primary: "#D70E20",
   danger: "#EF4444",success: "#22C55E",};//colour pallete for settings
-
-type Prefs = { //from backend preferences
-  homeAddress: string | null;
-  UniLoc: string | null;
-  bufferMins: number | null;
-};
 
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -32,7 +26,15 @@ function FieldLabel({ label }: { label: string }) {
   return <Text style={styles.fieldLabel}>{label}</Text>;
 }
 
-
+function errorMessage(e: any, fallback: string): string {
+  //account endpoints return {"error": "..."} bodies, other endpoints return plain text
+  try {
+    const parsed = e?.bodyText ? JSON.parse(e.bodyText) : null;
+    return parsed?.error ?? fallback;
+  } catch {
+    return e?.bodyText ?? e?.message ?? fallback;
+  }
+}
 
 export default function SettingsScreen() {
 
@@ -62,16 +64,7 @@ const {logout} = useAuth();
     try {
 
       const USER_ID = await getUserId();
-
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/preferences`, {
-        headers: await authHeaders(),
-      });
-      if (!res.ok) {
-
-        setStatus({ msg: `Failed to load (${res.status})`, type: "error" });
-        return;
-      }
-      const data = (await res.json()) as Prefs;
+      const data = await preferencesApi.get(USER_ID);
 
       //Ui shows data it got from backend
       if (data.homeAddress) setHomeAddress(data.homeAddress);
@@ -82,7 +75,7 @@ const {logout} = useAuth();
 
     } catch (e: any) {
 
-      setStatus({ msg: `Load error: ${e?.message ?? e}`, type: "error" });
+      setStatus({ msg: `Load error: ${e?.bodyText ?? e?.message ?? e}`, type: "error" });
         //^only if it cant load the data
     }
   }
@@ -106,35 +99,18 @@ const {logout} = useAuth();
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/preferences`, {
-
-        method: "PUT",
-        headers: {
-          ...(await authHeaders()),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          homeAddress: homeAddress.trim(),
-          UniLoc: uniAddress.trim(),
-          bufferMins: bufferNum,
-        }),
-
-        //uses the values from user preferences via await
+      const saved = await preferencesApi.update(USER_ID, {
+        homeAddress: homeAddress.trim(),
+        UniLoc: uniAddress.trim(),
+        bufferMins: bufferNum,
       });
 
-      if (!res.ok) {//error message if invalid response form bakcend
-        const txt = await res.text();
-        setStatus({ msg: `Save failed (${res.status})`, type: "error" });
-        Alert.alert("Save failed", `${res.status}\n${txt}`);
-        return;
-      }
-
-      const saved = (await res.json()) as Prefs;
       if (saved.bufferMins != null) setBufferMins(String(saved.bufferMins));
       setStatus({ msg: "Preferences saved ", type: "ok" });
       Alert.alert("Saved", "Your preferences have been updated reload the Calendar tab to recalculate leave times.");
     } catch (e: any) {
-      setStatus({ msg: `Save error: ${e?.message ?? e}`, type: "error" });
+      setStatus({ msg: `Save error: ${e?.bodyText ?? e?.message ?? e}`, type: "error" });
+      Alert.alert("Save failed", String(e?.bodyText ?? e?.message ?? e));
     }
   }
 
@@ -168,7 +144,7 @@ const {logout} = useAuth();
             style: "destructive",
             onPress: () => {
               requestDeleteCode().catch((e) =>
-                Alert.alert("Delete code error", String(e?.message ?? e))
+                Alert.alert("Delete code error", errorMessage(e, "Failed to request delete code"))
               );
             },
           },
@@ -180,15 +156,10 @@ const {logout} = useAuth();
       //to delete verification code to logged-in user's email
       const USER_ID = await getUserId();
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}/delete-account/request-code`, {
-        method: "POST",
-        headers: await authHeaders(),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.error ?? `fialed to request delete code (${res.status})`);
+      try {
+        await accountApi.requestDeleteCode(USER_ID);
+      } catch (e: any) {
+        throw new Error(errorMessage(e, "Failed to request delete code"));
       }
 
       //reveal code input after email is sent successfully
@@ -212,7 +183,7 @@ const {logout} = useAuth();
             style: "destructive",
             onPress: () => {
               deleteAccount().catch((e) =>
-                Alert.alert("Delete error", String(e?.message ?? e))
+                Alert.alert("Delete error", errorMessage(e, "Failed to delete account"))
               );
             },
           },
@@ -228,21 +199,10 @@ const {logout} = useAuth();
 
       const USER_ID = await getUserId();
 
-      const res = await fetch(`${API_BASE}/users/${USER_ID}`, {
-        method: "DELETE",
-        headers: {
-          ...(await authHeaders()),
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: deleteCode.trim(),
-        }),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        throw new Error(data?.error ?? `Failed to delete account (${res.status})`);
+      try {
+        await accountApi.deleteAccount(USER_ID, deleteCode.trim());
+      } catch (e: any) {
+        throw new Error(errorMessage(e, "Failed to delete account"));
       }
 
       //clears local ui state

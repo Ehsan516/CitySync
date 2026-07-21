@@ -1,4 +1,4 @@
-package com.citysync.backend;
+package com.citysync.backend.security;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
