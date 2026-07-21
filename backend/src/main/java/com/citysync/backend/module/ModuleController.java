@@ -1,8 +1,10 @@
 package com.citysync.backend.module;
 
+import com.citysync.backend.OwnershipCheck;
 import com.citysync.backend.user.User;
 import com.citysync.backend.user.UserRepo;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,12 +15,14 @@ public class ModuleController{
 
     private final UserRepo userRepo;
     private final ModuleRepository moduleRepo;
+    private final OwnershipCheck ownershipCheck;
     //gets the user and module table for creaion or fetching
 
-    public ModuleController(UserRepo userRepo, ModuleRepository moduleRepo){
+    public ModuleController(UserRepo userRepo, ModuleRepository moduleRepo, OwnershipCheck ownershipCheck){
         //constructor with user and module table as args
         this.userRepo = userRepo;
         this.moduleRepo = moduleRepo;
+        this.ownershipCheck = ownershipCheck;
     }
 
     /**creating a new module for a specific user */
@@ -26,9 +30,14 @@ public class ModuleController{
     @PostMapping
     public ResponseEntity<ModuleResponse> create (
             @PathVariable Long userId, //takes user ID from URL
-            @RequestBody CreateModuleReq req //the json body is mapped to a javarecord
+            @RequestBody CreateModuleReq req, //the json body is mapped to a javarecord
+            Authentication auth
 
     ){
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
+
         User user = userRepo.findById(userId).orElse(null);
         //check whether the parent user exists
 
@@ -54,7 +63,11 @@ public class ModuleController{
     /**list all modules for specific user
      * and HTTP: Get /users/{userId}/modules*/
     @GetMapping
-    public ResponseEntity<List<ModuleResponse>> list(@PathVariable Long userId) {
+    public ResponseEntity<List<ModuleResponse>> list(@PathVariable Long userId, Authentication auth) {
+
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
 
         if (!userRepo.existsById(userId)) {
             return ResponseEntity.notFound().build(); //if user doesn't exist return 404
@@ -76,9 +89,13 @@ public class ModuleController{
     public ResponseEntity<ModuleResponse> update(
             @PathVariable Long userId,
             @PathVariable Long moduleId,
-            @RequestBody UpdateModuleReq req
+            @RequestBody UpdateModuleReq req,
+            Authentication auth
     ) {
 
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
 
         if (!userRepo.existsById(userId)) return ResponseEntity.notFound().build();
 
@@ -108,9 +125,14 @@ public class ModuleController{
     public ResponseEntity<Void> delete(
 
             @PathVariable Long userId,
-            @PathVariable Long moduleId
+            @PathVariable Long moduleId,
+            Authentication auth
 
     ) {
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
+
         if (!userRepo.existsById(userId))
             return ResponseEntity.notFound().build();
 

@@ -1,9 +1,11 @@
 package com.citysync.backend.coursework;
 
+import com.citysync.backend.OwnershipCheck;
 import com.citysync.backend.module.Module;
 import com.citysync.backend.module.ModuleRepository;
 import com.citysync.backend.user.UserRepo;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -15,19 +17,25 @@ public class CwController {
     private final UserRepo userRepo;
     private final ModuleRepository moduleRepo;
     private final CwRepo cwRepo;
+    private final OwnershipCheck ownershipCheck;
 
     private static final String defaultUniLoc="City St George's, University of London, Northampton Square, London EC1V 0HB";
 
-    public CwController(UserRepo userRepo, ModuleRepository moduleRepo, CwRepo cwRepo) {
+    public CwController(UserRepo userRepo, ModuleRepository moduleRepo, CwRepo cwRepo, OwnershipCheck ownershipCheck) {
         this.userRepo = userRepo;
         this.moduleRepo = moduleRepo;
         this.cwRepo = cwRepo;
+        this.ownershipCheck = ownershipCheck;
     }
 
     /** get /users/{userId}/coursework
      * lists all coursework for a user across all modules */
     @GetMapping("/users/{userId}/coursework")
-    public ResponseEntity<java.util.List<CourseworkResponse>> listForUser(@PathVariable Long userId) {
+    public ResponseEntity<java.util.List<CourseworkResponse>> listForUser(@PathVariable Long userId, Authentication auth) {
+
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
 
         if (!userRepo.existsById(userId)) {
             return ResponseEntity.notFound().build();
@@ -48,8 +56,13 @@ public class CwController {
     public ResponseEntity<?> create(
             @PathVariable Long userId,
             @PathVariable Long moduleId,
-            @RequestBody CreateCourseworkReq req
+            @RequestBody CreateCourseworkReq req,
+            Authentication auth
     ) {
+
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
 
         if (!userRepo.existsById(userId)) {//checks user exists
             return ResponseEntity.notFound().build();
@@ -96,8 +109,13 @@ public class CwController {
             @PathVariable Long userId,
             @PathVariable Long moduleId,
             @PathVariable Long courseworkId,
-            @RequestBody UpdateCourseworkReq req
+            @RequestBody UpdateCourseworkReq req,
+            Authentication auth
     ) {
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
+
         //check user exists
         if (!userRepo.existsById(userId)) {
             return ResponseEntity.notFound().build();
@@ -177,8 +195,13 @@ public class CwController {
     public ResponseEntity<Void> delete(
             @PathVariable Long userId,
             @PathVariable Long moduleId,
-            @PathVariable Long courseworkId
+            @PathVariable Long courseworkId,
+            Authentication auth
     ) {
+        if (!ownershipCheck.isSelf(userId, auth)) {
+            return ResponseEntity.status(403).build();
+        }
+
         //check user exists
         if (!userRepo.existsById(userId)) {
             return ResponseEntity.notFound().build();
