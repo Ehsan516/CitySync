@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { ActivityIndicator,Alert,KeyboardAvoidingView,Platform,Pressable,SafeAreaView,
   StyleSheet,Text,TextInput,View,} from "react-native";
 import {authApi, ApiError} from "@/lib/api";
+import Card from "@/components/ui/Card";
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
 
 type Props = {
@@ -88,12 +90,12 @@ export default function LoginScreen({ onLogin }: Props) {
 
           {step === "email" ? (
 
-            <View style={s.card}>
+            <Card style={s.card}>
 
               <Text style={s.cardTitle}>Sign in</Text>
 
               <Text style={s.hint}>
-                Enter your email and you'll get a 6 digit code
+                Enter your email and you&apos;ll get a 6 digit code
               </Text>
               <Text style={s.label}>Email address</Text>
               <TextInput
@@ -101,7 +103,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 value={email}
                 onChangeText={setEmail}
                 placeholder="youremaillol@city.ac.uk"
-                placeholderTextColor="#555"
+                placeholderTextColor={AppColors.textTertiary}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoCorrect={false}
@@ -121,9 +123,9 @@ export default function LoginScreen({ onLogin }: Props) {
                   <Text style={s.btnText}>Send Code</Text>
                 )}
               </Pressable>
-            </View>
+            </Card>
           ) : (
-            <View style={s.card}>
+            <Card style={s.card}>
               <Text style={s.cardTitle}>check your email</Text>
               <Text style={s.hint}>
                 I sent a 6-digit code to{"\n"}
@@ -135,7 +137,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 value={code}
                 onChangeText={setCode}
                 placeholder="000000"
-                placeholderTextColor="#555"
+                placeholderTextColor={AppColors.textTertiary}
                 keyboardType="number-pad"
                 maxLength={6}
                 editable={!loading}
@@ -156,7 +158,7 @@ export default function LoginScreen({ onLogin }: Props) {
               <Pressable onPress={() => { setStep("email"); setCode(""); }} style={s.back}>
                 <Text style={s.backText}> Use different email</Text>
               </Pressable>
-            </View>
+            </Card>
           )}
 
         </View>
@@ -167,27 +169,27 @@ export default function LoginScreen({ onLogin }: Props) {
 
     const s = StyleSheet.create({
 
-        safe:{ flex: 1, backgroundColor: "#0b0b0f" },
+        safe:{ flex: 1, backgroundColor: AppColors.background },
         flex:{ flex: 1 },
 
         //login card centers vertically
-        container: {flex: 1, justifyContent: "center", padding: 24, gap: 24,},
+        container: {flex: 1, justifyContent: "center", padding: Spacing.xl, gap: Spacing.xxl,},
         hero: { alignItems: "center", gap: 6 },
-        appName: {fontSize: 36, fontWeight: "800", color: "white",letterSpacing: -0.5,},
-        tagline: { color: "#a9a9b6", fontSize: 14 },
+        appName: {fontSize: 36, fontWeight: "800", color: AppColors.text,letterSpacing: -0.5,},
+        tagline: { color: AppColors.textMuted, fontSize: 14 },
 
-        card: {backgroundColor: "#14141a", borderRadius: 20,borderWidth: 1, borderColor: "#232331",padding: 20,gap: 12,},
-        cardTitle: { color: "white", fontSize: 18, fontWeight: "800" },
-        hint:  { color: "#a9a9b6", fontSize: 13, lineHeight: 20 },
-        label: { color: "#a9a9b6", fontWeight: "600", fontSize: 13 },
+        card: {gap: 12,},
+        cardTitle: { color: AppColors.text, ...Type.title3 },
+        hint:  { color: AppColors.textSecondary, fontSize: 13, lineHeight: 20 },
+        label: { color: AppColors.textMuted, fontWeight: "600", fontSize: 13 },
 
         input: {
-          backgroundColor: "#0f0f14",
-          borderWidth: 1,
-          borderColor: "#2a2a3a",
-          borderRadius: 12,
+          backgroundColor: AppColors.card2,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: AppColors.border,
+          borderRadius: Radius.sm,
           padding: 14,
-          color: "white",
+          color: AppColors.text,
           fontSize: 16,
         },
         codeInput: {
@@ -196,11 +198,11 @@ export default function LoginScreen({ onLogin }: Props) {
           letterSpacing: 10,
           textAlign: "center",
         },
-        emailHighlight: { color: "white", fontWeight: "700" },
+        emailHighlight: { color: AppColors.text, fontWeight: "700" },
 
         btn: {
-          backgroundColor: "#D70E20",
-          borderRadius: 14,
+          backgroundColor: AppColors.primary,
+          borderRadius: Radius.md,
           paddingVertical: 14,
           alignItems: "center",
           marginTop: 4,
@@ -208,5 +210,5 @@ export default function LoginScreen({ onLogin }: Props) {
         btnText: { color: "white", fontWeight: "800", fontSize: 16 },
 
         back: { alignItems: "center", paddingVertical: 8 },
-        backText: { color: "#a9a9b6", fontSize: 13 },
+        backText: { color: AppColors.textMuted, fontSize: 13 },
       });

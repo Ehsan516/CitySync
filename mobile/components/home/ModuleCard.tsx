@@ -1,8 +1,10 @@
 import React from "react";
-import {View, Text, TextInput, FlatList, Button, Alert, StyleSheet,} from "react-native";
-import { DangerBtn, PrimBtn} from "@/components/home/ActionBtns";
+import {View, Text, TextInput, FlatList, Alert, StyleSheet,} from "react-native";
+import { DangerBtn, PrimBtn, SecBtn} from "@/components/home/ActionBtns";
 import GradeCard from "@/components/home/GradeCard";
+import Card from "@/components/ui/Card";
 import type { CourseworkDto, ModuleDto } from "@/lib/types";
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
 type Props = {
 
@@ -32,30 +34,30 @@ export default function ModuleCard({//card for module ctreation and display
     return (
         <>
           {/* Form to add module */}
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={styles.cardTitle}>Add module</Text>
 
             <View style={styles.formRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.label}>Code</Text>
-                <TextInput value={mCode} onChangeText={setMCode} style={styles.input} placeholder="e.g. IN3007" placeholderTextColor="#555" />
+                <TextInput value={mCode} onChangeText={setMCode} style={styles.input} placeholder="e.g. IN3007" placeholderTextColor={AppColors.textTertiary} />
               </View>
               <View style={{ width: 110 }}>
                 <Text style={styles.label}>Credits</Text>
-                <TextInput value={mCredits} onChangeText={setMCredits} style={styles.input} keyboardType="numeric" placeholderTextColor="#555" />
+                <TextInput value={mCredits} onChangeText={setMCredits} style={styles.input} keyboardType="numeric" placeholderTextColor={AppColors.textTertiary} />
               </View>
             </View>
 
             <Text style={styles.label}>Name</Text>
-            <TextInput value={mName} onChangeText={setMName} style={styles.input} placeholder="Module name" placeholderTextColor="#555" />
+            <TextInput value={mName} onChangeText={setMName} style={styles.input} placeholder="Module name" placeholderTextColor={AppColors.textTertiary} />
 
             <View style={styles.rowGap}>
               <PrimBtn title="Create module" onPress={createModule} />
             </View>
-          </View>
+          </Card>
 
           {/* Modules list */}
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={styles.cardTitle}>Modules</Text>
 
             <FlatList
@@ -76,7 +78,7 @@ export default function ModuleCard({//card for module ctreation and display
                   </View>
 
                   <View style={{ gap: 8 }}>
-                    <Button title="Rename" onPress={() =>//user gets prompted to rename module
+                    <SecBtn title="Rename" onPress={() =>//user gets prompted to rename module
                         Alert.prompt(
                           "Rename module",
                           "Enter a new module name",
@@ -114,7 +116,7 @@ export default function ModuleCard({//card for module ctreation and display
               )}
               ListEmptyComponent={<Text style={styles.muted}>No modules yet.</Text>}
             />
-          </View>
+          </Card>
         </>
       );
     }
@@ -122,32 +124,29 @@ export default function ModuleCard({//card for module ctreation and display
 const styles = StyleSheet.create({
 //container for create form and list
   card: {
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: "#14141a",
-    borderWidth: 1,
-    borderColor: "#232331",
+    gap: Spacing.sm,
   },
   cardTitle: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 10,
+    ...Type.headline,
+    color: AppColors.text,
+    marginBottom: Spacing.xs,
   },
   label: {
-    color: "#a9a9b6",
+    color: AppColors.textMuted,
     marginBottom: 6,
     fontWeight: "600",
+    fontSize: 13,
   },
 
 
   input: {//for module form fields
-    backgroundColor: "#0f0f14",
-    borderWidth: 1,
-    borderColor: "#2a2a3a",
-    borderRadius: 12,
+    backgroundColor: AppColors.card2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    borderRadius: Radius.sm,
     padding: 12,
-    color: "white",
+    color: AppColors.text,
+    fontSize: 15,
   },
   formRow: {
     flexDirection: "row",
@@ -155,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   rowGap: {
-    marginTop: 12,
+    marginTop: 4,
     gap: 10,
   },
 
@@ -163,23 +162,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     padding: 14,
-    borderRadius: 16,
-    backgroundColor: "#0f0f14",
-    borderWidth: 1,
-    borderColor: "#262638",
+    borderRadius: Radius.md,
+    backgroundColor: AppColors.card2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
   },
   itemTitle: {
-    color: "white",
+    color: AppColors.text,
     fontSize: 15,
     fontWeight: "800",
   },
   itemSub: {
-    color: "#d6d6df",
+    color: AppColors.textSecondary,
     marginTop: 3,
     fontWeight: "600",
   },
   muted: {
-    color: "#a9a9b6",
+    color: AppColors.textMuted,
     marginTop: 6,
   },
 });

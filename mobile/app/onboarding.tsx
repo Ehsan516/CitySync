@@ -1,9 +1,10 @@
 import React, {useState} from "react";
-import {View, Text, Pressable, StyleSheet, Linking, Alert} from "react-native";
+import {View, Text, Pressable, StyleSheet, Linking, Alert, SafeAreaView} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {router} from "expo-router";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns"
 import {getUserId} from "@/lib/api";
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
 // const storageKey = "citysync_has_onboarded";
 
@@ -13,10 +14,20 @@ async function markOnboarded(){//for each user onboarding separate
 }
 
 type Step = 0 | 1 | 2 | 3;
+const TOTAL_STEPS = 4;
 
 /*Onboarding screen when user logs in
 with multiple steps so they can navigate if they;re using the app for the first time*/
 
+function StepDots({ step }: { step: Step }) {
+    return (
+        <View style={styles.dots}>
+            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                <View key={i} style={[styles.dot, i === step && styles.dotActive]} />
+            ))}
+        </View>
+    );
+}
 
 export default function OnBoardingScreen() {
     const [step, setStep] = useState<Step>(0);
@@ -42,10 +53,12 @@ export default function OnBoardingScreen() {
                     <Text style ={styles.body}>
                         Manage uni life in one place!
                     </Text>
-                    <Text style = {styles.bullet}> •View your timetable and travel info</Text>
-                    <Text style = {styles.bullet}> •Track coursework deadlines</Text>
-                    <Text style = {styles.bullet}> •Get reminders before deadlines</Text>
-                    <PrimBtn title = "Get started" onPress={nextStep}/>
+                    <Text style = {styles.bullet}> •  View your timetable and travel info</Text>
+                    <Text style = {styles.bullet}> •  Track coursework deadlines</Text>
+                    <Text style = {styles.bullet}> •  Get reminders before deadlines</Text>
+                    <View style={styles.btnGap}>
+                        <PrimBtn title = "Get started" onPress={nextStep}/>
+                    </View>
                 </>
             );
 
@@ -54,15 +67,15 @@ export default function OnBoardingScreen() {
                 <>
                     <Text style={styles.title}> Connect your timetable</Text>
                     <Text style ={styles.body}>
-                        CitySync reads timetable events from the calendars on your phone. To get started, subscribe to your City's timetable ICS feed
+                        CitySync reads timetable events from the calendars on your phone. To get started, subscribe to your City&apos;s timetable ICS feed
                     </Text>
                     <Text style = {styles.bullet}>1. Tap the link below to open the myTimetable setup page</Text>
-                    <Text style = {styles.bullet}> Follow the instructions to subscribe to your timetable in your phone's calendar </Text>
+                    <Text style = {styles.bullet}> Follow the instructions to subscribe to your timetable in your phone&apos;s calendar </Text>
                     <Text style = {styles.bullet}> Come back and select it in CitySync </Text>
-                    <Text style = {styles.bullet}> •Subscribe to your city timetable in your phone calendar</Text>
+                    <Text style = {styles.bullet}> •  Subscribe to your city timetable in your phone calendar</Text>
                     <Text style = {styles.bullet}> Then choose that calendar in CitySync</Text>
 
-                    <Pressable style ={styles.linkBtn} onPress={() =>
+                    <Pressable style ={({ pressed }) => [styles.linkBtn, pressed && { opacity: 0.7 }]} onPress={() =>
                         Linking.openURL("https://mytimetable.city.ac.uk/help").catch(() =>
                             Alert.alert("Couldn't open link","Visit https://mytimetable.city.ac.uk/help on your browser."))
                     }>
@@ -84,20 +97,24 @@ export default function OnBoardingScreen() {
                     <Text style ={styles.body}>
                         Add modules and deadlines for coursework/exams so CitySync can help you stay organised
                     </Text>
-                    <Text style = {styles.bullet}> •Add modules</Text>
-                    <Text style = {styles.bullet}> •Add coursework deadlines</Text>
-                    <Text style = {styles.bullet}> •View grade predictions</Text>
-                    <PrimBtn title = "Continue" onPress={nextStep}/>
+                    <Text style = {styles.bullet}> •  Add modules</Text>
+                    <Text style = {styles.bullet}> •  Add coursework deadlines</Text>
+                    <Text style = {styles.bullet}> •  View grade predictions</Text>
+                    <View style={styles.btnGap}>
+                        <PrimBtn title = "Continue" onPress={nextStep}/>
+                    </View>
                 </>
             );
         case 3:
             return(
                 <>
-                    <Text style={styles.title}> You're ready </Text>
+                    <Text style={styles.title}> You&apos;re ready </Text>
                     <Text style ={styles.body}>
                         Your time cand coursework can be managed in one place
                     </Text>
-                    <PrimBtn title = "Go to app" onPress={finOnboard}/>
+                    <View style={styles.btnGap}>
+                        <PrimBtn title = "Go to app" onPress={finOnboard}/>
+                    </View>
                 </>
             );
 
@@ -107,39 +124,64 @@ export default function OnBoardingScreen() {
 
     }
     return (
-        <View style={styles.container}>{renderStep()}</View>
+        <SafeAreaView style={styles.safe}>
+            <View style={styles.container}>{renderStep()}</View>
+            <StepDots step={step} />
+        </SafeAreaView>
     );
 
 }
 
 const styles = StyleSheet.create({
+    safe: {
+        flex: 1,
+        backgroundColor: AppColors.background,
+    },
     container:{
-        flex:1, padding: 24, justifyContent: "center",
+        flex:1, padding: Spacing.xl, justifyContent: "center",
     },
     title:{
-        fontSize: 24, fontWeight: "bold", marginBottom: 16, color: "white",
+        ...Type.title1, marginBottom: Spacing.md, color: AppColors.text,
     },
     body: {
         fontSize: 16,
-        marginBottom: 16,
-        color: "white",
+        lineHeight: 22,
+        marginBottom: Spacing.md,
+        color: AppColors.textSecondary,
     },
     bullet: {
-        fontSize: 14, marginBottom: 8,color: "white",
+        fontSize: 14, marginBottom: 8, color: AppColors.textSecondary, lineHeight: 20,
     },
 
     linkBtn:{
     marginTop: 8,marginBottom: 4,
     paddingVertical: 12,paddingHorizontal: 16,
-    backgroundColor:"#1e1e30",
-    borderRadius: 10, borderWidth: 1, borderColor: "#1e1e30",
+    backgroundColor: AppColors.accentMuted,
+    borderRadius: Radius.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border,
     alignItems: "center",
     },
 
     linkText:{
-    color:"#3b4adb", fontWeight:"700",
+    color: AppColors.accent, fontWeight:"700",
     fontSize:14,},
 
     btnGap:{marginTop: 16, gap: 10,},
+
+    dots: {
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 8,
+        paddingBottom: Spacing.xl,
+    },
+    dot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: AppColors.fill,
+    },
+    dotActive: {
+        backgroundColor: AppColors.primary,
+        width: 18,
+    },
 
 });

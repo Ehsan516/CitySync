@@ -1,8 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, SafeAreaView, ScrollView, Switch, Text, View } from "react-native";
+import { Alert, SafeAreaView, Text, View, Switch, StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 import * as Calendar from "expo-calendar";
 import { getSelectedCalendarIds, setSelectedCalendarIds, clearSelectedCalendarIds,} from "@/lib/prefs";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import Card from "@/components/ui/Card";
+import { useScrollHeader } from "@/hooks/use-scroll-header";
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
 type CalRow = {//calendar object for rendering
   id: string;
@@ -12,21 +17,11 @@ type CalRow = {//calendar object for rendering
   allowsModifications?: boolean;
 };
 
-const colours = {bg: "#0B0B10",card: "#12121A",card2: "#161622",border: "rgba(255,255,255,0.08)",text: "#FFFFFF",
-  sub: "rgba(255,255,255,0.72)",muted: "rgba(255,255,255,0.45)",primary: "#D70E20",};
-  //^color themes for ui
-
 function Pill({ label }: { label: string }) {
 //ui for displaying data
   return (
-    <View
-      style={{
-
-        paddingHorizontal: 10,paddingVertical: 6,borderRadius: 999, backgroundColor: colours.card2,borderWidth: 1, borderColor: colours.border,
-        //^radius large for round look
-      }}
-    >
-      <Text style={{ color: colours.sub, fontWeight: "600", fontSize: 12 }}>
+    <View style={styles.pill}>
+      <Text style={styles.pillText}>
         {label}
       </Text>
     </View>
@@ -116,41 +111,29 @@ export default function CalendarSettingsScreen() {
     Alert.alert("Reset", "Cleared timetable calendar selection.");
   }
 
+  const { scrollY, onScroll } = useScrollHeader();
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colours.bg }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.background }}>
+      <ScreenHeader title="Timetable Calendars" subtitle={status} scrollY={scrollY} />
+      <Animated.ScrollView
+        contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 40, gap: Spacing.md }}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
       {/*header card */}
-        <View
-          style={{
-
-            backgroundColor: colours.card,
-            borderRadius: 22,
-            padding: 16,
-            borderWidth: 1,
-            borderColor: colours.border,
-            marginBottom: 12,
-
-          }}
-
-        >
-          <Text style={{ color: colours.text, fontSize: 28, fontWeight: "900" }}>
-
-            Timetable Calendars
-          </Text>
-
-          <Text style={{ color: colours.muted, marginTop: 6 }}>{status}</Text>
-
-          <Text style={{ color: colours.sub, marginTop:10, lineHeight: 20 }}>
+        <Card>
+          <Text style={styles.introText}>
             Citysync reads events only form the calendars you selected to build the unified calendar
           </Text>
 
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+          <View style={styles.pillRow}>
 
             <Pill label={`Calendars: ${cals.length}`} />
             <Pill label={`Selected: ${selectedCount}`} />
           </View>
 
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+          <View style={styles.actionRow}>
             <View style={{ flex: 1 }}>
 
               <PrimBtn title="Save selection" onPress={confirmSave}/>
@@ -163,37 +146,31 @@ export default function CalendarSettingsScreen() {
               />
             </View>
           </View>
-        </View>
+        </Card>
 
         {/* List */}
         {cals.map((c) => (
-          <View
-            key={c.id}
-            style={{
-
-              backgroundColor: colours.card, borderRadius: 18, padding: 14,borderWidth: 1, borderColor: colours.border,
-              marginBottom: 10,flexDirection: "row",gap: 12,alignItems: "center",justifyContent: "space-between",}}
-          >
+          <Card key={c.id} style={styles.calRow}>
             <View style={{ flex: 1 }}>
-            <Text style={{ color: colours.text, fontWeight: "900", fontSize: 16 }}>
+            <Text style={styles.calTitle}>
 
               {c.title}
             </Text>
 
-            <Text style={{ color: colours.sub, marginTop: 2 }}>
+            <Text style={styles.calSub}>
 
               {c.source ? `Source: ${c.source}` : "Source: n/a"}
               {c.type ? ` • Type: ${c.type}` : ""}
               {/*^show souce and calendar type if available, otherwise fallback */}
             </Text>
 
-            <Text style={{ color: colours.muted, marginTop: 2 }}>
+            <Text style={styles.calMuted}>
               {/*whether this calendar can be modified via api */}
               Writable: {c.allowsModifications ? "yes" : "no"}
             </Text>
 
             <Text
-              style={{ color: colours.muted, fontSize: 11, marginTop: 6 }}
+              style={styles.calId}
               numberOfLines={1} //truncate long calendar IDs to a single line
             >
               {c.id}
@@ -204,10 +181,37 @@ export default function CalendarSettingsScreen() {
             <Switch
               value={!!selected[c.id]}
               onValueChange={(v) => setSelected((prev) => ({ ...prev, [c.id]: v }))}
+              trackColor={{ false: AppColors.fill, true: AppColors.primary }}
+              thumbColor="#fff"
             />
-          </View>
+          </Card>
         ))}
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  introText: { color: AppColors.textSecondary, lineHeight: 20 },
+  pillRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md, flexWrap: "wrap" },
+  actionRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md + 2 },
+  pill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
+    backgroundColor: AppColors.card2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+  },
+  pillText: { color: AppColors.textSecondary, fontWeight: "600", fontSize: 12 },
+  calRow: {
+    flexDirection: "row",
+    gap: Spacing.md,
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  calTitle: { ...Type.callout, color: AppColors.text, fontSize: 16, fontWeight: "800" },
+  calSub: { color: AppColors.textSecondary, marginTop: 2 },
+  calMuted: { color: AppColors.textMuted, marginTop: 2, fontSize: 13 },
+  calId: { color: AppColors.textTertiary, fontSize: 11, marginTop: 6 },
+});

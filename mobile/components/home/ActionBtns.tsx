@@ -1,63 +1,106 @@
 import React from "react";
-import {Pressable, Text, StyleSheet} from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
+import * as Haptics from "expo-haptics";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { AppColors, Radius, Type } from "@/constants/app-theme";
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function PrimBtn({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }){
-       //primary action button in app
-         return (//reduces opacity when pressed
+type BtnProps = { title: string; onPress: () => void; disabled?: boolean };
 
-           <Pressable
-             onPress={onPress}
-             disabled={disabled}
-             style={({ pressed }) => [styles.btnPrimary, disabled && styles.btnDisabled, pressed && !disabled && { opacity: 0.85 }]}
-           >
+function usePressScale() {
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const onPressIn = () => {
+    scale.value = withTiming(0.96, { duration: 90 });
+  };
+  const onPressOut = () => {
+    scale.value = withTiming(1, { duration: 140 });
+  };
+  return { style, onPressIn, onPressOut };
+}
 
-             <Text style={styles.btnPrimaryText}>{title}</Text>
-           </Pressable>
-
-         );
-       }
-
-export function SecBtn({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }){
-//secondary button as neutral
+// Filled capsule — for the single primary action on a screen (iOS "filled" button style)
+export function PrimBtn({ title, onPress, disabled }: BtnProps) {
+  const { style, onPressIn, onPressOut } = usePressScale();
   return (
-
-    <Pressable
-      onPress={onPress}
+    <AnimatedPressable
+      onPress={() => {
+        if (!disabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       disabled={disabled}
-      style={({ pressed }) => [styles.btnSecondary, disabled && styles.btnDisabled, pressed && !disabled && { opacity: 0.85 }]}
+      style={[styles.btnPrimary, disabled && styles.btnDisabled, style]}
     >
-
-      <Text style={styles.btnSecondaryText}>{title}</Text>
-    </Pressable>
-
+      <Text style={styles.btnPrimaryText}>{title}</Text>
+    </AnimatedPressable>
   );
 }
 
-export function DangerBtn({ title, onPress, disabled }: { title: string; onPress: () => void; disabled?: boolean }){
-//for stuff like delete
+// Tinted — for secondary actions (iOS "gray"/tinted button style)
+export function SecBtn({ title, onPress, disabled }: BtnProps) {
+  const { style, onPressIn, onPressOut } = usePressScale();
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       disabled={disabled}
-      style={({ pressed }) => [styles.btnDanger, disabled && styles.btnDisabled, pressed && !disabled && { opacity: 0.85 }]}
+      style={[styles.btnSecondary, disabled && styles.btnDisabled, style]}
     >
+      <Text style={styles.btnSecondaryText}>{title}</Text>
+    </AnimatedPressable>
+  );
+}
 
+// Tinted red — for destructive actions (iOS convention: destructive buttons are
+// tinted, not filled solid, unless they're inside a confirmation sheet)
+export function DangerBtn({ title, onPress, disabled }: BtnProps) {
+  const { style, onPressIn, onPressOut } = usePressScale();
+  return (
+    <AnimatedPressable
+      onPress={() => {
+        if (!disabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onPress();
+      }}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      disabled={disabled}
+      style={[styles.btnDanger, disabled && styles.btnDisabled, style]}
+    >
       <Text style={styles.btnDangerText}>{title}</Text>
-
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  btnPrimary: { backgroundColor: "#D70E20", paddingVertical: 12, borderRadius: 12, alignItems: "center" },
-  btnPrimaryText: { color: "white", fontWeight: "800" },//primary button text
+  btnPrimary: {
+    backgroundColor: AppColors.primary,
+    paddingVertical: 13,
+    borderRadius: Radius.md,
+    alignItems: "center",
+  },
+  btnPrimaryText: { color: "white", ...Type.headline },
 
-  btnSecondary: { backgroundColor: "#1f1f2a", borderWidth: 1, borderColor: "#2b2b3b", paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, alignItems: "center" }, // secondary button
-  btnSecondaryText: { color: "white", fontWeight: "700" }, //secondary button text
+  btnSecondary: {
+    backgroundColor: AppColors.fillSecondary,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: Radius.md,
+    alignItems: "center",
+  },
+  btnSecondaryText: { color: AppColors.text, ...Type.callout },
 
-  btnDanger: { backgroundColor: "#2a1214", borderWidth: 1, borderColor: "#4b1c21", paddingVertical: 10, paddingHorizontal: 14, borderRadius: 12, alignItems: "center" }, // destructive button
-  btnDangerText: { color: "#ffb4bc", fontWeight: "800" },//delete buttons so it stands out
+  btnDanger: {
+    backgroundColor: AppColors.dangerMuted,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: Radius.md,
+    alignItems: "center",
+  },
+  btnDangerText: { color: AppColors.danger, ...Type.headline, fontSize: 15 },
 
-  btnDisabled: { opacity: 0.5 },
+  btnDisabled: { opacity: 0.4 },
 });

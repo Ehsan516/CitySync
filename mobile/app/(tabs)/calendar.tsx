@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, SafeAreaView, Text, View, Modal, Pressable, ScrollView, StyleSheet, Switch } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 import * as Calendar from "expo-calendar";
 
 import { getSelectedCalendarIds, getOnSiteToday, setOnSiteToday } from "@/lib/prefs";
@@ -7,6 +9,10 @@ import { getUserId, courseworkApi, preferencesApi, travelApi } from "@/lib/api";
 import { startOfWeek, addDays, ymd } from "@/lib/dateUtils";
 import type { CourseworkDto, TravelDetails, UnifiedItem } from "@/lib/types";
 import UnifiedWeekView from "@/components/calendar/UnifiedWeekView";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import { SecBtn } from "@/components/home/ActionBtns";
+import { AppColors, Spacing, Type } from "@/constants/app-theme";
+import { useScrollHeader } from "@/hooks/use-scroll-header";
 import {
   cancelAllLeaveSoonNotifs,
   calcLeaveTime,
@@ -49,9 +55,26 @@ export default function CalendarScreen() {
     setWeekAnch((prev) => addDays(prev, 7));
   }
 
+  function prevWeek(){
+    setWeekAnch((prev) => addDays(prev, -7));
+  }
+
   function currentWeek(){
     setWeekAnch(new Date());//goes back to current week
   }
+
+  const isCurrentWeek = ymd(weekStart) === ymd(startOfWeek(new Date()));
+
+  const weekSwipe = Gesture.Pan()
+    .activeOffsetX([-20, 20])
+    .failOffsetY([-15, 15])
+    .onEnd((e) => {
+      if (e.translationX < -40) {
+        runOnJS(nextWeek)();
+      } else if (e.translationX > 40) {
+        runOnJS(prevWeek)();
+      }
+    });
 
   async function handleOnSiteToggle(value: boolean){//toggle for on site si bitifs are reloaded
     setOnSiteMode(value);
@@ -372,8 +395,24 @@ export default function CalendarScreen() {
     loadUnifiedWeek();
   }, [prefsLoaded, weekStart.getTime()]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function onPullToRefresh() {
+    setRefreshing(true);
+    await loadUnifiedWeek();
+    setRefreshing(false);
+  }
+
+  const { scrollY, onScroll } = useScrollHeader();
+
   return (
-    <SafeAreaView style={{flex:1, backgroundColor: "#0b0b0f"}}>
+    <SafeAreaView style={{flex:1, backgroundColor: AppColors.background}}>
+      <ScreenHeader
+        title="Timetable"
+        subtitle={status}
+        rightSlot={!isCurrentWeek ? <SecBtn title="Today" onPress={currentWeek} /> : undefined}
+        scrollY={scrollY}
+      />
           <View style={s.onSiteStrip}>
             <View style={{ flex: 1 }}>
               <Text style={s.onSiteLabel}>On site today</Text>
@@ -387,88 +426,85 @@ export default function CalendarScreen() {
             <Switch
               value={onSiteMode}
               onValueChange={handleOnSiteToggle}
-              trackColor={{ false: "#2a2a3a", true: "#ffffff" }}
+              trackColor={{ false: AppColors.fill, true: AppColors.primary }}
               thumbColor="#fff"
             />
           </View>
-            <UnifiedWeekView
-             weekStartLabel={ymd(weekStart)}
-             weekEndLabel={ymd(addDays(weekStart, 6))}
-             status={status}
-             sections={sections}
-             onCurrentWeek={currentWeek}
-             onNextWeek={nextWeek}
-             onReload={loadUnifiedWeek}
-             onOpenRouteDetails={openRouteDetails}
-             />
+          <GestureDetector gesture={weekSwipe}>
+            <View collapsable={false} style={{ flex: 1 }}>
+              <UnifiedWeekView
+               weekStartLabel={ymd(weekStart)}
+               weekEndLabel={ymd(addDays(weekStart, 6))}
+               sections={sections}
+               onOpenRouteDetails={openRouteDetails}
+               refreshing={refreshing}
+               onRefresh={onPullToRefresh}
+               onScroll={onScroll}
+               />
+            </View>
+          </GestureDetector>
             <Modal
               visible={routeModalVisible}
               animationType="slide"
-              transparent={false}
+              presentationStyle="pageSheet"
               onRequestClose={() => {
                 setRouteModalVisible(false);
                 setSelectedRoute(null);
               }}
             >
-              <SafeAreaView style={{ flex: 1, backgroundColor: "#0b0b0f" }}>
-                <View style={{ padding: 16 }}>
-                  <Text style={{ fontSize: 20, fontWeight: "600", color: "white" }}>
+              <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.background }}>
+                <View style={s.sheetHandle} />
+                <View style={{ padding: Spacing.xl }}>
+                  <Text style={s.sheetTitle}>
                     Route details
                   </Text>
 
-                  <Text style={{ color: "#d6d6df", marginTop: 6 }}>
+                  <Text style={s.sheetSubtitle}>
                     {selectedRouteTitle}
                   </Text>
 
                   {routeLoading ? (
-                    <Text style={{ color: "#d6d6df", marginTop: 16 }}>Loading route...</Text>
+                    <Text style={s.sheetBody}>Loading route...</Text>
                   ) : selectedRoute ? (
                     <>
                       {selectedRoute.summary ? (
-                        <Text style={{ color: "#d6d6df", marginTop: 16, marginBottom: 12 }}>
+                        <Text style={[s.sheetBody, { marginBottom: 12 }]}>
                           {selectedRoute.summary}
                         </Text>
                       ) : null}
                       {selectedRoute.durationSeconds != null ? (
-                        <Text style={{ color: "#a9a9b6", marginBottom: 12 }}>
+                        <Text style={{ color: AppColors.textMuted, marginBottom: 12 }}>
                           Total travel time: {Math.ceil(selectedRoute.durationSeconds / 60)} mins
                         </Text>
                       ) : null}
 
                       <ScrollView style={{ maxHeight: 500 }}>
                         {selectedRoute.steps.map((step, i) => (
-                          <View
-                            key={i}
-                            style={{
-                              paddingVertical: 12,
-                              borderBottomWidth: 1,
-                              borderBottomColor: "#262638",
-                            }}
-                          >
-                            <Text style={{ color: "white", fontWeight: "600" }}>
+                          <View key={i} style={s.stepRow}>
+                            <Text style={s.stepTitle}>
                               {i + 1}. {step.instruction}
                             </Text>
                             {step.durationSeconds != null ? (
-                              <Text style={{ color: "#a9a9b6", marginTop: 4 }}>
+                              <Text style={{ color: AppColors.textMuted, marginTop: 4 }}>
                                 Duration: {Math.ceil(step.durationSeconds / 60)} mins
                               </Text>
                             ) : null}
 
-                            {step.lineName ? (<Text style={{ color: "#FFCD00" }}>Line: {step.lineName}</Text>) : null}
+                            {step.lineName ? (<Text style={s.stepHighlight}>Line: {step.lineName}</Text>) : null}
 
-                            {step.vehicleType ? (<Text style={{ color: "#FFCD00" }}>Vehicle: {step.vehicleType}</Text> ) : null}
+                            {step.vehicleType ? (<Text style={s.stepHighlight}>Vehicle: {step.vehicleType}</Text> ) : null}
 
-                            {step.departureStop ? (<Text style={{ color: "#FFCD00" }}>From: {step.departureStop}</Text> ) : null}
+                            {step.departureStop ? (<Text style={s.stepHighlight}>From: {step.departureStop}</Text> ) : null}
 
-                            {step.arrivalStop ? (<Text style={{ color: "#FFCD00" }}>To: {step.arrivalStop}</Text>) : null}
+                            {step.arrivalStop ? (<Text style={s.stepHighlight}>To: {step.arrivalStop}</Text>) : null}
 
-                            {step.headSign ? (<Text style={{ color: "#FFCD00" }}>Direction: {step.headSign}</Text>) : null}
+                            {step.headSign ? (<Text style={s.stepHighlight}>Direction: {step.headSign}</Text>) : null}
                           </View>
                         ))}
                       </ScrollView>
                     </>
                   ) : (
-                    <Text style={{ color: "#d6d6df", marginTop: 16 }}>
+                    <Text style={s.sheetBody}>
                       No route details loaded
                     </Text>
                   )}
@@ -478,9 +514,9 @@ export default function CalendarScreen() {
                       setRouteModalVisible(false);
                       setSelectedRoute(null);
                     }}
-                    style={{ marginTop: 16 }}
+                    style={({ pressed }) => [s.closeBtn, pressed && { opacity: 0.6 }]}
                   >
-                    <Text style={{ color: "#60A5FA", fontSize: 16 }}>Close</Text>
+                    <Text style={s.closeBtnText}>Close</Text>
                   </Pressable>
                 </View>
               </SafeAreaView>
@@ -493,22 +529,42 @@ const s = StyleSheet.create({
   onSiteStrip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#13131f",
-    borderBottomWidth: 1,
-    borderBottomColor: "#1e1e30",
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    backgroundColor: AppColors.card,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: AppColors.separator,
   },
   onSiteLabel: {
-    color: "white",
+    color: AppColors.text,
     fontWeight: "700",
     fontSize: 14,
   },
   onSiteHint: {
-    color: "#8888aa",
+    color: AppColors.textMuted,
     fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
   },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 36,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: AppColors.fill,
+    marginTop: 8,
+  },
+  sheetTitle: { ...Type.title3, color: AppColors.text },
+  sheetSubtitle: { color: AppColors.textSecondary, marginTop: 6 },
+  sheetBody: { color: AppColors.textSecondary, marginTop: 16 },
+  stepRow: {
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: AppColors.separator,
+  },
+  stepTitle: { color: AppColors.text, fontWeight: "600" },
+  stepHighlight: { color: AppColors.warning },
+  closeBtn: { marginTop: 16, alignSelf: "flex-start" },
+  closeBtnText: { color: AppColors.accent, fontSize: 16, fontWeight: "600" },
 });

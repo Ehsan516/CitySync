@@ -3,12 +3,14 @@ import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import LoginScreen from '@/components/LoginScreen';
+import { AppColors } from '@/constants/app-theme';
 
 
 export const unstable_settings = {
@@ -28,8 +30,8 @@ function AppGate() {
 
   if (auth.status === 'loading'){//loading spinner while onboarding checked
     return (
-      <View style={{ flex: 1, backgroundColor: '#0b0b0f', justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color="#D70E20" size="large" />
+      <View style={{ flex: 1, backgroundColor: AppColors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={AppColors.primary} size="large" />
       </View>
     );
   }
@@ -55,8 +57,10 @@ function AppGate() {
 
   export default function RootLayout() {//making auth global by wrapping on app
     return (
-        <AuthProvider>
-            <AppGate />
-        </AuthProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <AuthProvider>
+                <AppGate />
+            </AuthProvider>
+        </GestureHandlerRootView>
     );
 }

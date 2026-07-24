@@ -1,204 +1,218 @@
 import React from "react";
-import {View, Text, SectionList,StyleSheet, Pressable, SafeAreaView} from "react-native";
-import {PrimBtn, SecBtn} from "@/components/home/ActionBtns"
+import {View, Text, SectionList, StyleSheet, Pressable, RefreshControl} from "react-native";
+import Animated from "react-native-reanimated";
 import type { UnifiedItem } from "@/lib/types";
+import { AppColors, Radius, Spacing } from "@/constants/app-theme";
 
 type SectionType ={
     title: string; data: UnifiedItem[];
 };
 
+const AnimatedSectionList = Animated.createAnimatedComponent(SectionList<UnifiedItem, SectionType>);
+
 type Props = {
     weekStartLabel: string; weekEndLabel: string;
-    status: string;
     sections: SectionType[];
-    onCurrentWeek: ()=> void;
-    onNextWeek: () => void;
-    onReload: () => void;
     onOpenRouteDetails: (item: UnifiedItem) => void;
+    refreshing: boolean;
+    onRefresh: () => void;
+    onScroll?: (event: any) => void;
 };
 
 function fmtSectionDate(ymd:string) : string {
-//function to add weekday on the unified calendar
-    const [y,m,d] = ymd.split("-").map(Number);//input string to year month day and then num
+    const [y,m,d] = ymd.split("-").map(Number);
 
     const date = new Date(y, m-1, d);
 
-    const weekDay = date.toLocaleDateString("en-GB", {weekday: "long"});//getting weekday name
+    const weekDay = date.toLocaleDateString("en-GB", {weekday: "long"});
 
     return `${weekDay} • ${ymd}`;
 }
 
 export default function UnifiedWeekView({
     weekStartLabel,weekEndLabel,
-    status,sections,
-    onCurrentWeek, onNextWeek,
-    onReload, onOpenRouteDetails,
+    sections,
+    onOpenRouteDetails,
+    refreshing, onRefresh,
+    onScroll,
 }: Props) {
 
 return(
     <View style={styles.safe}>
-    {/*week info and buttons*/}
-      <View style={styles.container}>
-        <View style={styles.hcard }>
-        <Text style={styles.htitle}>Unified Week: </Text>
-        <Text style = {styles.hsub}>Week: {weekStartLabel} to {weekEndLabel}</Text>
-        <Text style={styles.hstatus}>Status: {status}</Text>
+      <Text style={styles.rangeLabel}>{weekStartLabel} — {weekEndLabel}</Text>
 
-        {/*week navigation btns*/}
-        <View style = {styles.weekBtnRow}>
-            <View style = {{flex:1}}>
-                <SecBtn title="This week" onPress={onCurrentWeek}/>
-            </View>
-            <View style = {{flex:1}}>
-                <SecBtn title="Next week" onPress={onNextWeek}/>
-            </View>
-        </View>
-      <View style = {{marginTop: 8}}>
-        <PrimBtn title="Reload unified week" onPress={onReload} />
-      </View>
-      </View>
-
-      <SectionList<UnifiedItem, SectionType>
+      <AnimatedSectionList
         sections={sections}
         style={{flex: 1}}
         contentContainerStyle={{paddingBottom: 120}}
         keyExtractor={(item) => item.key}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={AppColors.primary} />
+        }
         renderSectionHeader={({ section }) => (
-          <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: "#14141a" }}>
-            <Text style={{ fontWeight: "700", color: "white" }}>{fmtSectionDate(section.title)}</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionHeaderText}>{fmtSectionDate(section.title)}</Text>
           </View>
         )}
         renderItem={({ item }) => {
 
           const past = item.end.getTime() < Date.now();
-          //^dims events that have already finished
 
           return (
 
-            // <View style={{ paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1 }}>
-            <View
-              style={{paddingHorizontal: 16,paddingVertical: 10,borderBottomWidth: 1,backgroundColor: past ? "#101015" : "#0b0b0f",
-                borderBottomColor: "#262638",opacity: past ? 0.45 : 1,
-              }}
-            >
+            <View style={styles.itemRow}>
+              <View style={[styles.sourceBar, { backgroundColor: item.source === "timetable" ? AppColors.accent : AppColors.primary }]} />
 
-              <Text style={{ fontWeight: "600", color: past ? "#7f7f8f" : "white" }}>
-                [{item.source === "timetable" ? "Lecture" : "Coursework"}] {item.title}
-              </Text>
+              <View style={[styles.itemCard, past && styles.itemCardPast]}>
 
-              <Text style={{ color: past ? "#7f7f8f" : "#d6d6df" }}>
-                {item.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} to{" "}
-                {item.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </Text>
-
-
-              {item.location ? (
-                <Text style={{ color: past ? "#6d6d7c" : "#a9a9b6" }}>
-                  Location: {item.location}
+                <Text style={[styles.itemKicker, { color: item.source === "timetable" ? AppColors.accent : AppColors.primary }]}>
+                  {item.source === "timetable" ? "LECTURE" : "COURSEWORK"}
                 </Text>
-              ) : null}
 
-              {item.meta ? (
-                <>
-                  {item.meta.split(" • ").map((part, i) => (
-                    <Text
-                      key={i}
-                      style={{fontSize: 12,color: past
-                          ? "#6d6d7c" : part.startsWith("Leave at") ? "#22C55E" : "#a9a9b6",
-                        marginTop: i === 0 ? 4 : 1,
-                      }}
-                    >
-                      {part}
-                    </Text>
-                  ))}
-                </>
-              ) : null}
+                <Text style={[styles.itemTitle, past && styles.itemTextPast]}>{item.title}</Text>
 
-              {/*}only shows button for future timetable evnts*/}
-              {(item.source === "timetable" || (item.source === "coursework" && item.onSite)) && !past ?(
-                <Pressable
-                    onPress={() => onOpenRouteDetails(item)}
-                    style={{marginTop: 8 }}
-                >
-                 <Text style={{ color:"#9bc2f2", fontSize: 13}}>
-                    Show route details
-                 </Text>
-                </Pressable>
-              ):null}
+                <Text style={[styles.itemTime, past && styles.itemTextPast]}>
+                  {item.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – {" "}
+                  {item.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </Text>
+
+
+                {item.location ? (
+                  <Text style={[styles.itemMeta, past && styles.itemMetaPast]}>
+                    Location: {item.location}
+                  </Text>
+                ) : null}
+
+                {item.meta ? (
+                  <>
+                    {item.meta.split(" • ").map((part, i) => (
+                      <Text
+                        key={i}
+                        style={[
+                          styles.itemMeta,
+                          past ? styles.itemMetaPast : part.startsWith("Leave at") && styles.itemMetaLeave,
+                          { marginTop: i === 0 ? 4 : 1 },
+                        ]}
+                      >
+                        {part}
+                      </Text>
+                    ))}
+                  </>
+                ) : null}
+
+                {(item.source === "timetable" || (item.source === "coursework" && item.onSite)) && !past ?(
+                  <Pressable
+                      onPress={() => onOpenRouteDetails(item)}
+                      style={({ pressed }) => [styles.routeBtn, pressed && { opacity: 0.6 }]}
+                  >
+                   <Text style={styles.routeBtnText}>
+                      Show route details ›
+                   </Text>
+                  </Pressable>
+                ):null}
+              </View>
             </View>
 
           );
         }}
-        ListEmptyComponent={<Text style={{ padding: 16, color: "#d6d6df" }}>No items this week</Text>}
+        ListEmptyComponent={<Text style={styles.emptyText}>No items this week</Text>}
       />
-      </View>
     </View>
 );}
 
 const styles = StyleSheet.create({
 
-container:{flex:1, padding:16, gap: 14,},
+safe:{flex:1, backgroundColor: AppColors.background},
 
-hcard:{
-    padding:16,borderRadius: 18, backgroundColor:"#14141a",
-    borderWidth:1,borderColor: "#232331",gap:10,
+rangeLabel:{
+    color: AppColors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.sm,
 },
 
-htitle:{
-    fontSize: 20, fontWeight: "800", color: "white",
+sectionHeader: {
+  paddingHorizontal: Spacing.xl,
+  paddingTop: Spacing.md,
+  paddingBottom: Spacing.sm,
+  backgroundColor: AppColors.background,
+},
+sectionHeaderText: {
+  fontWeight: "700",
+  fontSize: 13,
+  textTransform: "uppercase",
+  letterSpacing: 0.4,
+  color: AppColors.textMuted,
 },
 
-hsub:{ fontSize:14, color: "#d6d6df",},
-
-hstatus:{
-    fontSize:14,color:"#d6d6df",
+itemRow: {
+  flexDirection: "row",
+  paddingHorizontal: Spacing.lg,
+  marginBottom: Spacing.sm,
+  gap: Spacing.sm,
+},
+sourceBar: {
+  width: 3,
+  borderRadius: 2,
+  marginVertical: 2,
+},
+itemCard: {
+  flex: 1,
+  paddingHorizontal: Spacing.md,
+  paddingVertical: Spacing.md,
+  borderRadius: Radius.md,
+  backgroundColor: AppColors.card,
+  borderWidth: StyleSheet.hairlineWidth,
+  borderColor: AppColors.border,
+},
+itemCardPast: {
+  opacity: 0.45,
+},
+itemKicker: {
+  fontSize: 11,
+  fontWeight: "800",
+  letterSpacing: 0.5,
+  marginBottom: 3,
+},
+itemTitle: {
+  fontWeight: "700",
+  fontSize: 15,
+  color: AppColors.text,
+},
+itemTime: {
+  color: AppColors.textSecondary,
+  marginTop: 2,
+  fontSize: 13,
+},
+itemMeta: {
+  fontSize: 12,
+  color: AppColors.textMuted,
+},
+itemMetaPast: {
+  color: AppColors.textTertiary,
+},
+itemMetaLeave: {
+  color: AppColors.success,
+  fontWeight: "700",
+},
+itemTextPast: {
+  color: AppColors.textMuted,
+},
+routeBtn: {
+  marginTop: 8,
+  alignSelf: "flex-start",
+},
+routeBtnText: {
+  color: AppColors.accent,
+  fontSize: 13,
+  fontWeight: "600",
+},
+emptyText: {
+  padding: Spacing.lg,
+  color: AppColors.textMuted,
 },
 
-weekBtnRow:{flexDirection:"row", gap: 10, marginTop: 6,},
-
-sectionHeaderWrap:{
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 8,
-    backgroundColor: "#0b0b0f"
-
-},
-
-sectionHeaderText:{
-    color:"white", fontWeight: "800", fontSize: 15,
-},
-
-itemWrap:{
-    paddingHorizontal: 16, paddingBottom: 10, backgroundColor: "#0b0b0f",
-},
-
-itemCard:{
-    padding:14, borderRadius: 16, backgroundColor: "#14141a",
-    borderWidth: 1, borderColor: "#262638",
-},
-
-itemCardPast:{
-    opacity:0.45, backgroundColor: "#101015",
-},
-
-itemTitle:{
-    fontWeight: "800", fontSize: 15, color: "white",
-},
-
-itemTime:{
-    color:"#d6d6df", marginTop: 4, fontSize: 14,
-},
-
-itemMeta:{fontSize:12, color: "#a9a9b6",},
-
-leaveText:{fontSize: 12, color: "#22C55E",marginTop: 4,},
-
-routeLink:{
-    color:"#9bc2f2", fontSize: 13,
-    marginTop: 10, fontWeight: "600",
-},
-
-emptyText:{ padding: 16, color: "#d6d6df",},
-
-safe:{flex:1, backgroundColor: "#0b0b0b,"}
 });

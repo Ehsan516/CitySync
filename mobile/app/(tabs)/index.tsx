@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Animated from "react-native-reanimated";
 import { useAuth } from "@/hooks/useAuth";
 import HeaderCard from "@/components/home/HeaderCard";
-import GradeCard from "@/components/home/GradeCard";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import Card from "@/components/ui/Card";
+import { SecBtn } from "@/components/home/ActionBtns";
+import { AppColors, Spacing, Type } from "@/constants/app-theme";
+import { useScrollHeader } from "@/hooks/use-scroll-header";
 import type { CourseworkDto, ModuleDto } from "@/lib/types";
-import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet,View, Text} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, RefreshControl, SafeAreaView, StyleSheet, Text} from "react-native";
 import ModuleCard from "@/components/home/ModuleCard";
 import CwCard from "@/components/home/CwCard";
 import { getModuleWeightTotal, calcOverallGrade, gradeLabel, gradeColour} from "@/lib/CwHelpers"
@@ -366,49 +371,64 @@ export default function HomeScreen() {
 
   const overallGrade = useMemo(() => calcOverallGrade(modules, coursework), [modules, coursework]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function onPullToRefresh() {
+    setRefreshing(true);
+    await Promise.all([loadModules(), loadCoursework()]);
+    setRefreshing(false);
+  }
+
   //on screen load fetch both lists
   useEffect(() => {
     loadModules();
     loadCoursework();
   }, []);
 
+  const { scrollY, onScroll } = useScrollHeader();
+
   return (
     <SafeAreaView style={styles.safe}>
+      <ScreenHeader
+        title="CitySync"
+        subtitle={`User ${userId ?? "?"} • ${status}`}
+        rightSlot={<SecBtn title="Logout" onPress={logout} />}
+        scrollY={scrollY}
+      />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <HeaderCard
-            userId={userId}
-            status={status}
-            stats={stats}
-            onRefresh={() => { loadModules(); loadCoursework(); }}
-            onLogout={logout}
-          />
+        <Animated.ScrollView
+          contentContainerStyle={styles.container}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onPullToRefresh} tintColor={AppColors.primary} />
+          }
+        >
+          <HeaderCard stats={stats} />
 
-      <View style={{
-        padding: 16, borderRadius: 18, backgroundColor:"#14141a", borderWidth:1, borderColor:"#232331",alignItems: "center",gap:6,
-      }}>
+      <Card style={styles.gradeCard}>
 
-      <Text style={{color: "#d6d6df", fontSize: 14, fontWeight:"700",}}> Overall confirmed grade</Text>
+      <Text style={styles.gradeHeading}> Overall confirmed grade</Text>
 
       {overallGrade ?(
         <>
-            <Text style = {{fontSize: 30, fontWeight: "800", color: gradeColour(Math.round(overallGrade.percent))}}>
+            <Text style = {[styles.gradeValue, { color: gradeColour(Math.round(overallGrade.percent)) }]}>
                 {overallGrade.percent}%
             </Text>
 
-            <Text style = {{fontSize: 14, fontWeight: "700", color: gradeColour(Math.round(overallGrade.percent)),}}>
+            <Text style = {[styles.gradeLabel, { color: gradeColour(Math.round(overallGrade.percent)) }]}>
                 {gradeLabel(Math.round(overallGrade.percent))}
             </Text>
 
-            <Text style={{ color: "#a9a9b6", fontSize:12, textAlign: "center",}} >
+            <Text style={styles.gradeHint} >
                 Based on fully completed modules only, {overallGrade.creditsUsed} credits included
             </Text>
           </>
-          ):(<Text style={{color: "#a9a9b6", fontSize: 12, textAlign: "center",}}>
+          ):(<Text style={styles.gradeHint}>
             No confirmed overall grade yet, complete and grade coursework in at least one module.
             </Text>
       )}
-    </View>
+    </Card>
 
           <ModuleCard
             modules={modules}
@@ -468,7 +488,7 @@ export default function HomeScreen() {
             setEditLocation = {setEditLocation}
           />
 
-        </ScrollView>
+        </Animated.ScrollView>
 
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -479,11 +499,19 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#0b0b0f",
+    backgroundColor: AppColors.background,
   },
   container: {
-    padding: 16,
+    padding: Spacing.lg,
     paddingBottom: 40,
-    gap: 14,
+    gap: Spacing.md,
   },
+  gradeCard: {
+    alignItems: "center",
+    gap: 6,
+  },
+  gradeHeading: { ...Type.footnote, color: AppColors.textSecondary },
+  gradeValue: { fontSize: 32, fontWeight: "800" },
+  gradeLabel: { ...Type.footnote, fontSize: 14 },
+  gradeHint: { color: AppColors.textMuted, fontSize: 12, textAlign: "center", lineHeight: 17 },
 });

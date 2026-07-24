@@ -3,9 +3,11 @@ import {View,Text, TextInput, FlatList, Pressable, StyleSheet, Alert,Switch} fro
 import {Picker} from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { PrimBtn, SecBtn, DangerBtn } from "@/components/home/ActionBtns";
+import Card from "@/components/ui/Card";
 import type { CourseworkDto, ModuleDto } from "@/lib/types";
 import { formatDate, formatTime } from "@/lib/dateUtils";
 import { getReminderLevel } from "@/lib/CwHelpers";
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
 type Props = {
   modules: ModuleDto[];
@@ -111,11 +113,11 @@ export default function CwCard({ //recieved all state and handles from index
     return (
     <>
           {/*Add cw */}
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={styles.cardTitle}>Add coursework</Text>
 
             {/*changing module dropdown from id to text*/}
-            <View style={{ borderWidth: 1, borderColor: "#2a2a3a", borderRadius: 10, overflow: "hidden", marginBottom: 8 }}>
+            <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={selectedModuleId}
                 onValueChange={(v) => setSelectedModuleId(v)}
@@ -141,21 +143,21 @@ export default function CwCard({ //recieved all state and handles from index
                 <Text style={styles.label}>Due date</Text>
 
                 <Pressable onPress = {() => setShowDatePicker(true)} style={styles.input}>
-                    <Text style={{ color: "white" }}> {formatDate(cwDueDateObj).split("T")[0]} </Text>
+                    <Text style={{ color: AppColors.text }}> {formatDate(cwDueDateObj).split("T")[0]} </Text>
                     {/* shows current selected date */}
                 </Pressable>
 
                 <Text style = {styles.label}> Due time  </Text>
                 <Pressable onPress = {() => setShowTimePicker(true)} style={styles.input}>
                 {/*should open time picker when press*/}
-                    <Text style={{ color: "white" }}>{formatTime(cwDueDateObj)}</Text>
+                    <Text style={{ color: AppColors.text }}>{formatTime(cwDueDateObj)}</Text>
                     {/* shos current sleected time*/}
                 </Pressable>
               </View>
               <View style={{ width: 110 }}>
 
                 <Text style={styles.label}>Weight %</Text>
-                <TextInput value={cwWeighting} onChangeText={setCwWeighting} style={styles.input} keyboardType="numeric" placeholderTextColor="#555" />
+                <TextInput value={cwWeighting} onChangeText={setCwWeighting} style={styles.input} keyboardType="numeric" placeholderTextColor={AppColors.textTertiary} />
               </View>
             </View>
 
@@ -191,11 +193,16 @@ export default function CwCard({ //recieved all state and handles from index
             )}
 
             <Text style={styles.label}>Title</Text>
-            <TextInput value={cwTitle} onChangeText={setCwTitle} style={styles.input} placeholder="Coursework title" placeholderTextColor="#555" />
+            <TextInput value={cwTitle} onChangeText={setCwTitle} style={styles.input} placeholder="Coursework title" placeholderTextColor={AppColors.textTertiary} />
 
-            <View style = {{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10}}>
+            <View style = {styles.switchRow}>
                 <Text style={styles.label}>On-site assessment?</Text>
-                <Switch value={cwOnSite} onValueChange={setCwOnSite}/>
+                <Switch
+                  value={cwOnSite}
+                  onValueChange={setCwOnSite}
+                  trackColor={{ false: AppColors.fill, true: AppColors.primary }}
+                  thumbColor="#fff"
+                />
                 {/*toggle for onsite for cw items/exams whatever*/}
             </View>
 
@@ -207,7 +214,7 @@ export default function CwCard({ //recieved all state and handles from index
                     onChangeText={setCwLocation}
                     style={styles.input}
                     placeholder="city main campus or the crypt etc"
-                    placeholderTextColor="#555"
+                    placeholderTextColor={AppColors.textTertiary}
                 />
             </>
             )}
@@ -215,10 +222,10 @@ export default function CwCard({ //recieved all state and handles from index
             <View style={styles.rowGap}>
               <PrimBtn title="Create coursework" onPress={createCoursework} />
             </View>
-          </View>
+          </Card>
 
           {/* Coursework list */}
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={styles.cardTitle}>Coursework</Text>
 
             <FlatList
@@ -242,7 +249,7 @@ export default function CwCard({ //recieved all state and handles from index
                         {item.scorePercent != null ? `•Mark: ${item.scorePercent}%` : ""}
                       </Text>
 
-                      <Text style={styles.badge}>
+                      <Text style={[styles.badge, done ? styles.badgeDone : styles.badgePending]}>
                         {item.completed ? "completed" : "pending"}
                       </Text>
 
@@ -267,13 +274,13 @@ export default function CwCard({ //recieved all state and handles from index
                             value={editTitle}
                             onChangeText={setEditTitle}
                             style={styles.editInput}
-                            placeholderTextColor="#555"
+                            placeholderTextColor={AppColors.textTertiary}
                           />
 
                           {/*editing date picker*/}
                           <Text style={styles.editLabel}>Due date</Text>
                           <Pressable onPress={() => setEditDP(true)} style={styles.editInput}>
-                            <Text style = {{ color : "white" }}>
+                            <Text style = {{ color : AppColors.text }}>
                                 {editDueDateObj ? formatDate(editDueDateObj).split("T")[0] : ""}
                             </Text>
                           </Pressable>
@@ -281,7 +288,7 @@ export default function CwCard({ //recieved all state and handles from index
                           {/*editng time picker*/}
                           <Text style={styles.editLabel}>Due timee</Text>
                           <Pressable onPress={() => setEditTP(true)} style={styles.editInput}>
-                            <Text style = {{ color : "white" }}>
+                            <Text style = {{ color : AppColors.text }}>
                                 {editDueDateObj ? formatTime(editDueDateObj) : ""}
                             </Text>
                           </Pressable>
@@ -328,7 +335,7 @@ export default function CwCard({ //recieved all state and handles from index
                             onChangeText={setEditWeighting}
                             style={styles.editInput}
                             keyboardType="numeric"
-                            placeholderTextColor="#555"
+                            placeholderTextColor={AppColors.textTertiary}
 
                           />
 
@@ -339,11 +346,16 @@ export default function CwCard({ //recieved all state and handles from index
                             style={styles.editInput}
                             keyboardType="numeric"
                             placeholder= "e.g 65"
-                            placeholderTextColor= "#555"
+                            placeholderTextColor={AppColors.textTertiary}
                           />
-                          <View style = {{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8}}>
+                          <View style = {styles.switchRow}>
                             <Text style = {styles.editLabel}>On-site assessment</Text>
-                            <Switch value= {editOnSite} onValueChange={setEditOnSite}/>
+                            <Switch
+                              value= {editOnSite}
+                              onValueChange={setEditOnSite}
+                              trackColor={{ false: AppColors.fill, true: AppColors.primary }}
+                              thumbColor="#fff"
+                            />
                           </View>
 
                           {editOnSite &&(
@@ -354,7 +366,7 @@ export default function CwCard({ //recieved all state and handles from index
                                     onChangeText={setEditLocation}
                                     style={styles.editInput}
                                     placeholder="city main campus, exam room, the Crpyt etc."
-                                    placeholderTextColor="#555"
+                                    placeholderTextColor={AppColors.textTertiary}
                                 />
                             </>
                           )}
@@ -401,45 +413,47 @@ export default function CwCard({ //recieved all state and handles from index
                   </View>
                 );}}
               ListEmptyComponent={<Text style={styles.muted}>No coursework yet.</Text>}/>
-          </View>
+          </Card>
          </>
         );
        }
 const styles = StyleSheet.create({
-  card: { padding: 16, borderRadius: 18, backgroundColor: "#14141a", borderWidth: 1, borderColor: "#232331" },//sectn card container
-  cardTitle: { color: "white", fontSize: 16, fontWeight: "800", marginBottom: 10 },
-  label: { color: "#a9a9b6", marginBottom: 6, fontWeight: "600" },//the input label
-  input: { backgroundColor: "#0f0f14", borderWidth: 1, borderColor: "#2a2a3a", borderRadius: 12, padding: 12, color: "white" },
+  card: { gap: Spacing.sm },
+  cardTitle: { ...Type.headline, color: AppColors.text, marginBottom: Spacing.xs },
+  label: { color: AppColors.textMuted, marginBottom: 6, fontWeight: "600", fontSize: 13 },
+  input: { backgroundColor: AppColors.card2, borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border, borderRadius: Radius.sm, padding: 12, color: AppColors.text, fontSize: 15 },
+  pickerWrap: { borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border, borderRadius: Radius.sm, overflow: "hidden", marginBottom: 8, backgroundColor: AppColors.card2 },
   formRow: { flexDirection: "row", gap: 10, marginBottom: 12 },//row layot for grouped inputs
-  rowGap: { marginTop: 12, gap: 10 },//spacing between button/rows
+  rowGap: { marginTop: 4, gap: 10 },//spacing between button/rows
+  switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
 
-  itemCard: { flexDirection: "row", gap: 12, padding: 14, borderRadius: 16, backgroundColor: "#0f0f14", borderWidth: 1, borderColor: "#262638" }, // list item card
-  itemTitle: { color: "white", fontSize: 15, fontWeight: "800" },//title
-  itemSub: { color: "#d6d6df", marginTop: 3, fontWeight: "600" },//item subtitle
+  itemCard: { flexDirection: "row", gap: 12, padding: 14, borderRadius: Radius.md, backgroundColor: AppColors.card2, borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border }, // list item card
+  itemTitle: { color: AppColors.text, fontSize: 15, fontWeight: "800" },//title
+  itemSub: { color: AppColors.textSecondary, marginTop: 3, fontWeight: "600" },//item subtitle
 
-  muted: { color: "#a9a9b6", marginTop: 6 },
+  muted: { color: AppColors.textMuted, marginTop: 6, fontSize: 13 },
   //^any text underneath
 
-  badge: { marginTop: 10, alignSelf: "flex-start", paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, overflow: "hidden", fontWeight: "800", backgroundColor: "#1f1f2a", color: "white" }, // status for complete/pending
+  badge: { marginTop: 10, alignSelf: "flex-start", paddingVertical: 5, paddingHorizontal: 10, borderRadius: Radius.pill, overflow: "hidden", fontWeight: "800", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3 }, // status for complete/pending
+  badgePending: { backgroundColor: AppColors.warningMuted, color: AppColors.warning },
+  badgeDone: { backgroundColor: AppColors.successMuted, color: AppColors.success },
 
-  editPanel: { marginTop: 12, padding: 12, borderRadius: 12, backgroundColor: "#12121c", borderWidth: 1, borderColor: "#2a2a40", gap: 6 }, // inline edit box
-  editLabel: { color: "#a9a9b6", fontSize: 12, fontWeight: "600" },//edit label
-  editInput: { backgroundColor: "#0f0f14", borderWidth: 1, borderColor: "#2a2a3a", borderRadius: 10, padding: 10, color: "white", fontSize: 14 }, // inline edit input
+  editPanel: { marginTop: 12, padding: 12, borderRadius: Radius.sm, backgroundColor: AppColors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border, gap: 6 }, // inline edit box
+  editLabel: { color: AppColors.textMuted, fontSize: 12, fontWeight: "600" },//edit label
+  editInput: { backgroundColor: AppColors.card2, borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border, borderRadius: Radius.sm, padding: 10, color: AppColors.text, fontSize: 14 }, // inline edit input
 
 
   //for completed cw in list
   itemCardCompleted:{
-    backgroundColor: "#0d012",
-    borderColor: "#1c1c28",
-    opacity: 0.65,
+    opacity: 0.55,
   },
 
   completedText:{
-    color: "#9a9aaa",
+    color: AppColors.textMuted,
   },
 
   completedMuted:{
-    color: "#6f6f7f",
+    color: AppColors.textTertiary,
   },
 
 });

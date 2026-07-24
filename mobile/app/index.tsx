@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import {getUserId} from "@/lib/api";
+import { AppColors } from "@/constants/app-theme";
 
 // const storageKey = "citysync_has_onboarded";//key to flag is user completes onboarding
 
@@ -30,13 +31,13 @@ export default function Index() {
         <View
             style={{
                 flex:1,
-                backgroundColor: "#0b0b0f",
+                backgroundColor: AppColors.background,
                 justifyContent: "center",
                 alignItems: "center",
             }}
         >
             {/*Async check runs so loading indicator shown*/}
-            <ActivityIndicator size = "large" color="#D70E20" />
+            <ActivityIndicator size = "large" color={AppColors.primary} />
         </View>
     );
 

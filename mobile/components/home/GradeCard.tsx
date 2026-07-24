@@ -1,8 +1,8 @@
 import React from "react";
-import {View, Text, StyleSheet} from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import type { CourseworkDto } from "@/lib/types";
 import { calcGrade, gradeColour, gradeLabel } from "@/lib/CwHelpers";
-
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
 export default function GradeCard({ moduleId, coursework }: { moduleId: number; coursework: CourseworkDto[] }) {
   const cwForModule = coursework.filter((c) => c.moduleId === moduleId);
@@ -73,14 +73,14 @@ export default function GradeCard({ moduleId, coursework }: { moduleId: number; 
       </View>
 
       {allocWeight > 100 &&( //if saved weighting > 100
-        <Text style = {[gradeStyles.hint, {color: "#EF4444"}]}>
+        <Text style = {[gradeStyles.hint, {color: AppColors.danger}]}>
             Invalid module input: coursework weighting exceeds 100%
         </Text>
       )}
 
       {remainingWeight === 0 && (
 
-        <Text style={[gradeStyles.hint, { color: "#22C55E" }]}>
+        <Text style={[gradeStyles.hint, { color: AppColors.success }]}>
 
           All coursework submitted, final grade is {Math.round(confirmedMark)}%
         </Text>
@@ -91,22 +91,28 @@ export default function GradeCard({ moduleId, coursework }: { moduleId: number; 
 
 const gradeStyles = StyleSheet.create({
 
-  container: {marginTop: 12,padding: 12,borderRadius: 12,backgroundColor: "#0a0a12",borderWidth: 1,
-  borderColor: "#2a2a40", gap: 8,},
+  container: {
+    marginTop: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: AppColors.card2,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    gap: Spacing.sm,
+  },
 
-  heading: {color: "#d6d6df",fontWeight: "700",fontSize: 13,},
+  heading: { ...Type.footnote, color: AppColors.textSecondary },
 
-  barTrack: { flexDirection: "row", height: 8, borderRadius: 99, overflow: "hidden", backgroundColor: "#1f1f30",},
-  barFill: { backgroundColor: "#D70E20", borderRadius: 99,},
-  barLabel: { color: "#a9a9b6", fontSize: 11,},
+  barTrack: { flexDirection: "row", height: 6, borderRadius: 99, overflow: "hidden", backgroundColor: AppColors.fill },
+  barFill: { backgroundColor: AppColors.primary, borderRadius: 99 },
+  barLabel: { color: AppColors.textMuted, fontSize: 11, fontWeight: "600" },
 
-  rangeRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginTop: 4,},
-  rangeBox: {alignItems: "center",flex: 1,},
-  rangeValue: { color: "white", fontSize: 22, fontWeight: "800",},
-  rangeLabel: {fontSize: 12, fontWeight: "700", marginTop: 2,},
+  rangeRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginTop: Spacing.xs },
+  rangeBox: { alignItems: "center", flex: 1 },
+  rangeValue: { color: AppColors.text, fontSize: 22, fontWeight: "800" },
+  rangeLabel: { fontSize: 12, fontWeight: "700", marginTop: 2 },
 
-  rangeHint: {color: "#a9a9b6", fontSize: 10, textAlign: "center", marginTop: 2,},
-  rangeSep: {color: "#a9a9b6", fontSize: 18, paddingHorizontal: 8,},
-  hint: {color: "#a9a9b6", fontSize: 11,},
+  rangeSep: { color: AppColors.textMuted, fontSize: 15, paddingHorizontal: Spacing.sm },
+  hint: { color: AppColors.textMuted, fontSize: 11, lineHeight: 16 },
 
 });

@@ -1,27 +1,42 @@
 import { Tabs } from 'expo-router';
+import { Platform, StyleSheet } from 'react-native';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import TabBarBackground from '@/components/ui/tab-bar-background';
+import { AppColors } from '@/constants/app-theme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: AppColors.primary,
+        tabBarInactiveTintColor: AppColors.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarBackground: TabBarBackground,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
+        },
+        tabBarStyle: Platform.select({
+          ios: {
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: AppColors.separator,
+          },
+          default: {
+            backgroundColor: AppColors.card,
+            borderTopColor: AppColors.border,
+          },
+        }),
       }}>
       {/* Modules and cw CRUD */}
       <Tabs.Screen
         name="index"
         options={{
           title: 'Modules',
-          tabBarIcon: ({ color }) => (<IconSymbol size={28} name="house.fill" color={color} />),
+          tabBarIcon: ({ color }) => (<IconSymbol size={26} name="house.fill" color={color} />),
         }}
       />
 
@@ -31,7 +46,7 @@ export default function TabLayout() {
         name="calendar"
         options={{
           title: 'Timetable',
-          tabBarIcon: ({ color }) => (<IconSymbol size={28} name="calendar" color={color} />),
+          tabBarIcon: ({ color }) => (<IconSymbol size={26} name="calendar" color={color} />),
         }}
       />
 
@@ -40,7 +55,7 @@ export default function TabLayout() {
         name="calendarSettings"
         options={{
           title: "Calendar",
-          tabBarIcon: ({ color }) => ( <IconSymbol size={28} name="list.bullet" color={color} />),
+          tabBarIcon: ({ color }) => ( <IconSymbol size={26} name="list.bullet" color={color} />),
 
         }}
       />
@@ -50,7 +65,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: "Settings",
-          tabBarIcon: ({ color }) => (<IconSymbol size={28} name="gearshape.fill" color={color} />
+          tabBarIcon: ({ color }) => (<IconSymbol size={26} name="gearshape.fill" color={color} />
           ),
         }}
       />

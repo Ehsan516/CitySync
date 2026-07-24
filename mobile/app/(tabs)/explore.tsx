@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from "react";
-import {Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView,StyleSheet,
+import {Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView,StyleSheet,
   Text, TextInput, View,} from "react-native";
+import Animated from "react-native-reanimated";
 import { getUserId, preferencesApi, accountApi, delUserId } from "@/lib/api";
 import {PrimBtn, DangerBtn} from "@/components/home/ActionBtns";
+import ScreenHeader from "@/components/ui/ScreenHeader";
+import Card from "@/components/ui/Card";
+import { useScrollHeader } from "@/hooks/use-scroll-header";
 import {useAuth} from "@/hooks/useAuth";
+import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
 
-const C = { bg: "#0B0B10", card: "#12121A", card2: "#161622", border: "rgba(255,255,255,0.08)",
-  text: "#FFFFFF", sub: "rgba(255,255,255,0.72)",muted: "rgba(255,255,255,0.45)",primary: "#D70E20",
-  danger: "#EF4444",success: "#22C55E",};//colour pallete for settings
-
+const C = AppColors;
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
 //card wrpper for each section
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <Text style={styles.cardTitle}>{title}</Text>
       {children}
-    </View>
+    </Card>
   );
 }
 
@@ -223,26 +225,25 @@ const {logout} = useAuth();
     setBufferMins(String(next));
   }
 
-  const statusColour =
-    status.type === "ok" ? C.success : status.type === "error" ? C.danger : C.muted;
+  const { scrollY, onScroll } = useScrollHeader();
 
   return (
     <SafeAreaView style={styles.safe}>
+      <ScreenHeader title="Settings" subtitle={status.msg || undefined} scrollY={scrollY} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-
-          {/*Header */}
-          <Text style={styles.heading}>Settings</Text>
-          {status.msg ? (
-            <Text style={[styles.statusText, { color: statusColour }]}>{status.msg}</Text>
-          ) : null}
+        <Animated.ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
 
           {/*Travel settings */}
           <SectionCard title="Travel Settings">
-            <Text>
+            <Text style={styles.sub}>
                 Citysync uses your saved location details to calculate travel timea and generate leave-soon alerts.
             </Text>
             <FieldLabel label="Home address or postcode" />
@@ -253,7 +254,7 @@ const {logout} = useAuth();
               onChangeText={setHomeAddress}
               placeholder="e.g. LU4 8AY or 123 Portland road, Luton"
               //^example address for users which is mine
-              placeholderTextColor={C.muted}
+              placeholderTextColor={C.textTertiary}
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
@@ -269,7 +270,7 @@ const {logout} = useAuth();
 
               value={uniAddress}
               onChangeText={setUniAddress}
-              placeholderTextColor={C.muted}
+              placeholderTextColor={C.textTertiary}
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
@@ -312,7 +313,7 @@ const {logout} = useAuth();
               onChangeText={setBufferMins}
               keyboardType="numeric"
               placeholder="or type a number"
-              placeholderTextColor={C.muted}
+              placeholderTextColor={C.textTertiary}
               style={[styles.input, { textAlign: "center" }]}
             />
             <Text style={styles.hint}>Max 300 minutes(5 hours), default is 10 mins.</Text>
@@ -348,7 +349,7 @@ const {logout} = useAuth();
                             value={deleteCode}
                             onChangeText={setDeleteCode}
                             placeholder="Enter the code sent to your email"
-                            placeholderTextColor={C.muted}
+                            placeholderTextColor={C.textTertiary}
                             autoCapitalize="none"
                             autoCorrect={false}
                             style={styles.input}
@@ -367,7 +368,7 @@ const {logout} = useAuth();
           <PrimBtn title="Save Preferences" onPress={confSavePrefs} disabled={status.type === "loading"} />
 
           <View style={{ height: 40 }} />
-        </ScrollView>
+        </Animated.ScrollView>
 
       </KeyboardAvoidingView>
 
@@ -377,28 +378,22 @@ const {logout} = useAuth();
 
 const styles = StyleSheet.create({
 
-  safe: {flex: 1,backgroundColor: C.bg,},
-  scroll: {padding: 20,gap: 16,},
-  heading: {fontSize: 28,fontWeight: "800",color: C.text,marginBottom: 4,},
-  statusText: {
-    fontSize: 13,
-    marginBottom: 8,
-  },
+  safe: {flex: 1,backgroundColor: C.background,},
+  scroll: {padding: Spacing.xl,gap: Spacing.lg,},
+  card: {gap: 10,},
+  cardTitle: { ...Type.headline, color: C.text, marginBottom: 4,
+  },fieldLabel: {fontSize: 13,fontWeight: "600",color: C.textSecondary,},
 
-  card: {backgroundColor: C.card,borderRadius: 16,padding: 16,gap: 10,borderWidth: 1,borderColor: C.border,},
-  cardTitle: {fontSize: 16,fontWeight: "700",color: C.text, marginBottom: 4,
-  },fieldLabel: {fontSize: 13,fontWeight: "600",color: C.sub,},
-
-  input: {backgroundColor: C.card2,borderWidth: 1,borderColor: C.border,borderRadius: 10,padding: 12,color: C.text,fontSize: 14,},
-  hint: {fontSize: 12,color: C.muted,},
-  sub: {fontSize: 13,color: C.sub,lineHeight: 20,},
+  input: {backgroundColor: C.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: C.border,borderRadius: Radius.sm,padding: 12,color: C.text,fontSize: 15,},
+  hint: {fontSize: 12,color: C.textMuted,},
+  sub: {fontSize: 13,color: C.textSecondary,lineHeight: 20,},
 
   bufferRow: {flexDirection: "row",alignItems: "center",justifyContent: "center",gap: 20,marginVertical: 8,},
-  bufferBtn: {backgroundColor: C.card2,borderWidth: 1,borderColor: C.border,borderRadius: 12,width: 56,height: 56,
+  bufferBtn: {backgroundColor: C.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: C.border,borderRadius: Radius.sm,width: 56,height: 56,
     alignItems: "center",justifyContent: "center",},
   bufferBtnText: {color: C.text,fontSize: 20,fontWeight: "700",},
 
   bufferDisplay: {alignItems: "center",minWidth: 80,},
   bufferValue: {color: C.primary,fontSize: 40,fontWeight: "800",},
-  bufferUnit: {color: C.muted, fontSize: 13,},
+  bufferUnit: {color: C.textMuted, fontSize: 13,},
 });
