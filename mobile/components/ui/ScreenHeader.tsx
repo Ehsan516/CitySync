@@ -1,7 +1,6 @@
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { Extrapolation, interpolate, SharedValue, useAnimatedStyle } from "react-native-reanimated";
 import { AppColors, Spacing, Type } from "@/constants/app-theme";
 
@@ -9,16 +8,12 @@ type Props = {
   title: string;
   subtitle?: string;
   rightSlot?: React.ReactNode;
-  // Optional: pass scrollY from useScrollHeader() to get the blurred
-  // sticky-bar-on-scroll effect used by Apple's large title nav bars.
   scrollY?: SharedValue<number>;
 };
 
 const FADE_DISTANCE = 24;
 
 export default function ScreenHeader({ title, subtitle, rightSlot, scrollY }: Props) {
-  const insets = useSafeAreaInsets();
-
   const bgStyle = useAnimatedStyle(() => {
     "worklet";
     if (!scrollY) return { opacity: 0 };
@@ -26,7 +21,7 @@ export default function ScreenHeader({ title, subtitle, rightSlot, scrollY }: Pr
   });
 
   return (
-    <View style={[styles.wrap, { paddingTop: insets.top + Spacing.sm }]}>
+    <View style={styles.wrap}>
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, bgStyle]}>
         {Platform.OS === "ios" ? (
           <BlurView tint="systemChromeMaterialDark" intensity={95} style={StyleSheet.absoluteFill} />
@@ -57,6 +52,7 @@ export default function ScreenHeader({ title, subtitle, rightSlot, scrollY }: Pr
 const styles = StyleSheet.create({
   wrap: {
     paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xs,
     paddingBottom: Spacing.md,
   },
   hairline: {

@@ -20,7 +20,6 @@ function usePressScale() {
   return { style, onPressIn, onPressOut };
 }
 
-// Filled capsule — for the single primary action on a screen (iOS "filled" button style)
 export function PrimBtn({ title, onPress, disabled }: BtnProps) {
   const { style, onPressIn, onPressOut } = usePressScale();
   return (
@@ -39,7 +38,6 @@ export function PrimBtn({ title, onPress, disabled }: BtnProps) {
   );
 }
 
-// Tinted — for secondary actions (iOS "gray"/tinted button style)
 export function SecBtn({ title, onPress, disabled }: BtnProps) {
   const { style, onPressIn, onPressOut } = usePressScale();
   return (
@@ -55,8 +53,6 @@ export function SecBtn({ title, onPress, disabled }: BtnProps) {
   );
 }
 
-// Tinted red — for destructive actions (iOS convention: destructive buttons are
-// tinted, not filled solid, unless they're inside a confirmation sheet)
 export function DangerBtn({ title, onPress, disabled }: BtnProps) {
   const { style, onPressIn, onPressOut } = usePressScale();
   return (

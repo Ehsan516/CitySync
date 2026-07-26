@@ -454,7 +454,7 @@ export default function CalendarScreen() {
             >
               <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.background }}>
                 <View style={s.sheetHandle} />
-                <View style={{ padding: Spacing.xl }}>
+                <View style={s.sheetHeader}>
                   <Text style={s.sheetTitle}>
                     Route details
                   </Text>
@@ -463,52 +463,52 @@ export default function CalendarScreen() {
                     {selectedRouteTitle}
                   </Text>
 
-                  {routeLoading ? (
-                    <Text style={s.sheetBody}>Loading route...</Text>
-                  ) : selectedRoute ? (
-                    <>
-                      {selectedRoute.summary ? (
-                        <Text style={[s.sheetBody, { marginBottom: 12 }]}>
-                          {selectedRoute.summary}
-                        </Text>
-                      ) : null}
-                      {selectedRoute.durationSeconds != null ? (
-                        <Text style={{ color: AppColors.textMuted, marginBottom: 12 }}>
-                          Total travel time: {Math.ceil(selectedRoute.durationSeconds / 60)} mins
-                        </Text>
-                      ) : null}
-
-                      <ScrollView style={{ maxHeight: 500 }}>
-                        {selectedRoute.steps.map((step, i) => (
-                          <View key={i} style={s.stepRow}>
-                            <Text style={s.stepTitle}>
-                              {i + 1}. {step.instruction}
-                            </Text>
-                            {step.durationSeconds != null ? (
-                              <Text style={{ color: AppColors.textMuted, marginTop: 4 }}>
-                                Duration: {Math.ceil(step.durationSeconds / 60)} mins
-                              </Text>
-                            ) : null}
-
-                            {step.lineName ? (<Text style={s.stepHighlight}>Line: {step.lineName}</Text>) : null}
-
-                            {step.vehicleType ? (<Text style={s.stepHighlight}>Vehicle: {step.vehicleType}</Text> ) : null}
-
-                            {step.departureStop ? (<Text style={s.stepHighlight}>From: {step.departureStop}</Text> ) : null}
-
-                            {step.arrivalStop ? (<Text style={s.stepHighlight}>To: {step.arrivalStop}</Text>) : null}
-
-                            {step.headSign ? (<Text style={s.stepHighlight}>Direction: {step.headSign}</Text>) : null}
-                          </View>
-                        ))}
-                      </ScrollView>
-                    </>
-                  ) : (
-                    <Text style={s.sheetBody}>
-                      No route details loaded
+                  {selectedRoute?.summary ? (
+                    <Text style={[s.sheetBody, { marginTop: 12, marginBottom: 0 }]}>
+                      {selectedRoute.summary}
                     </Text>
-                  )}
+                  ) : null}
+                  {selectedRoute?.durationSeconds != null ? (
+                    <Text style={{ color: AppColors.textMuted, marginTop: 8 }}>
+                      Total travel time: {Math.ceil(selectedRoute.durationSeconds / 60)} mins
+                    </Text>
+                  ) : null}
+                </View>
 
+                {routeLoading ? (
+                  <Text style={[s.sheetBody, s.sheetPadded]}>Loading route...</Text>
+                ) : selectedRoute ? (
+                  <ScrollView style={{ flex: 1 }} contentContainerStyle={s.stepsList}>
+                    {selectedRoute.steps.map((step, i) => (
+                      <View key={i} style={s.stepRow}>
+                        <Text style={s.stepTitle}>
+                          {i + 1}. {step.instruction}
+                        </Text>
+                        {step.durationSeconds != null ? (
+                          <Text style={{ color: AppColors.textMuted, marginTop: 4 }}>
+                            Duration: {Math.ceil(step.durationSeconds / 60)} mins
+                          </Text>
+                        ) : null}
+
+                        {step.lineName ? (<Text style={s.stepHighlight}>Line: {step.lineName}</Text>) : null}
+
+                        {step.vehicleType ? (<Text style={s.stepHighlight}>Vehicle: {step.vehicleType}</Text> ) : null}
+
+                        {step.departureStop ? (<Text style={s.stepHighlight}>From: {step.departureStop}</Text> ) : null}
+
+                        {step.arrivalStop ? (<Text style={s.stepHighlight}>To: {step.arrivalStop}</Text>) : null}
+
+                        {step.headSign ? (<Text style={s.stepHighlight}>Direction: {step.headSign}</Text>) : null}
+                      </View>
+                    ))}
+                  </ScrollView>
+                ) : (
+                  <Text style={[s.sheetBody, s.sheetPadded]}>
+                    No route details loaded
+                  </Text>
+                )}
+
+                <View style={s.sheetFooter}>
                   <Pressable
                     onPress={() => {
                       setRouteModalVisible(false);
@@ -555,9 +555,16 @@ const s = StyleSheet.create({
     backgroundColor: AppColors.fill,
     marginTop: 8,
   },
+  sheetHeader: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.md,
+  },
   sheetTitle: { ...Type.title3, color: AppColors.text },
   sheetSubtitle: { color: AppColors.textSecondary, marginTop: 6 },
   sheetBody: { color: AppColors.textSecondary, marginTop: 16 },
+  sheetPadded: { paddingHorizontal: Spacing.xl },
+  stepsList: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.lg },
   stepRow: {
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -565,6 +572,12 @@ const s = StyleSheet.create({
   },
   stepTitle: { color: AppColors.text, fontWeight: "600" },
   stepHighlight: { color: AppColors.warning },
-  closeBtn: { marginTop: 16, alignSelf: "flex-start" },
+  sheetFooter: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: AppColors.separator,
+  },
+  closeBtn: { alignSelf: "center" },
   closeBtnText: { color: AppColors.accent, fontSize: 16, fontWeight: "600" },
 });
