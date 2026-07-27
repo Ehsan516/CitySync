@@ -11,8 +11,10 @@ import type { CourseworkDto, TravelDetails, UnifiedItem } from "@/lib/types";
 import UnifiedWeekView from "@/components/calendar/UnifiedWeekView";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { SecBtn } from "@/components/home/ActionBtns";
-import { AppColors, Spacing, Type } from "@/constants/app-theme";
+import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
+import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
 import {
   cancelAllLeaveSoonNotifs,
   calcLeaveTime,
@@ -404,9 +406,12 @@ export default function CalendarScreen() {
   }
 
   const { scrollY, onScroll } = useScrollHeader();
+  const { colors, radius } = useTheme();
+  const s = useMemo(() => makeStyles(colors, radius), [colors, radius]);
+  const tabBarPadding = useTabBarPadding();
 
   return (
-    <SafeAreaView style={{flex:1, backgroundColor: AppColors.background}}>
+    <SafeAreaView style={{flex:1, backgroundColor: colors.background}}>
       <ScreenHeader
         title="Timetable"
         subtitle={status}
@@ -426,7 +431,7 @@ export default function CalendarScreen() {
             <Switch
               value={onSiteMode}
               onValueChange={handleOnSiteToggle}
-              trackColor={{ false: AppColors.fill, true: AppColors.primary }}
+              trackColor={{ false: colors.fill, true: colors.primary }}
               thumbColor="#fff"
             />
           </View>
@@ -440,6 +445,7 @@ export default function CalendarScreen() {
                refreshing={refreshing}
                onRefresh={onPullToRefresh}
                onScroll={onScroll}
+               extraBottomPadding={tabBarPadding}
                />
             </View>
           </GestureDetector>
@@ -452,7 +458,7 @@ export default function CalendarScreen() {
                 setSelectedRoute(null);
               }}
             >
-              <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.background }}>
+              <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
                 <View style={s.sheetHandle} />
                 <View style={s.sheetHeader}>
                   <Text style={s.sheetTitle}>
@@ -469,7 +475,7 @@ export default function CalendarScreen() {
                     </Text>
                   ) : null}
                   {selectedRoute?.durationSeconds != null ? (
-                    <Text style={{ color: AppColors.textMuted, marginTop: 8 }}>
+                    <Text style={{ color: colors.textMuted, marginTop: 8 }}>
                       Total travel time: {Math.ceil(selectedRoute.durationSeconds / 60)} mins
                     </Text>
                   ) : null}
@@ -485,7 +491,7 @@ export default function CalendarScreen() {
                           {i + 1}. {step.instruction}
                         </Text>
                         {step.durationSeconds != null ? (
-                          <Text style={{ color: AppColors.textMuted, marginTop: 4 }}>
+                          <Text style={{ color: colors.textMuted, marginTop: 4 }}>
                             Duration: {Math.ceil(step.durationSeconds / 60)} mins
                           </Text>
                         ) : null}
@@ -525,24 +531,25 @@ export default function CalendarScreen() {
   );
 }
 
-const s = StyleSheet.create({
+function makeStyles(colors: ColorTokens, radius: typeof Radius) {
+  return StyleSheet.create({
   onSiteStrip: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
-    backgroundColor: AppColors.card,
+    backgroundColor: colors.card,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppColors.separator,
+    borderBottomColor: colors.separator,
   },
   onSiteLabel: {
-    color: AppColors.text,
+    color: colors.text,
     fontWeight: "700",
     fontSize: 14,
   },
   onSiteHint: {
-    color: AppColors.textMuted,
+    color: colors.textMuted,
     fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
@@ -552,7 +559,7 @@ const s = StyleSheet.create({
     width: 36,
     height: 5,
     borderRadius: 3,
-    backgroundColor: AppColors.fill,
+    backgroundColor: colors.fill,
     marginTop: 8,
   },
   sheetHeader: {
@@ -560,24 +567,25 @@ const s = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
   },
-  sheetTitle: { ...Type.title3, color: AppColors.text },
-  sheetSubtitle: { color: AppColors.textSecondary, marginTop: 6 },
-  sheetBody: { color: AppColors.textSecondary, marginTop: 16 },
+  sheetTitle: { ...Type.title3, color: colors.text },
+  sheetSubtitle: { color: colors.textSecondary, marginTop: 6 },
+  sheetBody: { color: colors.textSecondary, marginTop: 16 },
   sheetPadded: { paddingHorizontal: Spacing.xl },
   stepsList: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.lg },
   stepRow: {
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppColors.separator,
+    borderBottomColor: colors.separator,
   },
-  stepTitle: { color: AppColors.text, fontWeight: "600" },
-  stepHighlight: { color: AppColors.warning },
+  stepTitle: { color: colors.text, fontWeight: "600" },
+  stepHighlight: { color: colors.warning },
   sheetFooter: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: AppColors.separator,
+    borderTopColor: colors.separator,
   },
   closeBtn: { alignSelf: "center" },
-  closeBtnText: { color: AppColors.accent, fontSize: 16, fontWeight: "600" },
-});
+  closeBtnText: { color: colors.accent, fontSize: 16, fontWeight: "600" },
+  });
+}

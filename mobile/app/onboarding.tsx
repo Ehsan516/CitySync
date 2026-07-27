@@ -1,10 +1,11 @@
-import React, {useState} from "react";
+import React, {useMemo, useState} from "react";
 import {View, Text, Pressable, StyleSheet, Linking, Alert, SafeAreaView} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {router} from "expo-router";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns"
 import {getUserId} from "@/lib/api";
-import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
+import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // const storageKey = "citysync_has_onboarded";
 
@@ -19,7 +20,8 @@ const TOTAL_STEPS = 4;
 /*Onboarding screen when user logs in
 with multiple steps so they can navigate if they;re using the app for the first time*/
 
-function StepDots({ step }: { step: Step }) {
+function StepDots({ step, colors }: { step: Step; colors: ColorTokens }) {
+    const styles = useMemo(() => makeStyles(colors), [colors]);
     return (
         <View style={styles.dots}>
             {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -30,6 +32,8 @@ function StepDots({ step }: { step: Step }) {
 }
 
 export default function OnBoardingScreen() {
+    const { colors } = useTheme();
+    const styles = useMemo(() => makeStyles(colors), [colors]);
     const [step, setStep] = useState<Step>(0);
 
     async function finOnboard(){
@@ -126,43 +130,44 @@ export default function OnBoardingScreen() {
     return (
         <SafeAreaView style={styles.safe}>
             <View style={styles.container}>{renderStep()}</View>
-            <StepDots step={step} />
+            <StepDots step={step} colors={colors} />
         </SafeAreaView>
     );
 
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: AppColors.background,
+        backgroundColor: colors.background,
     },
     container:{
         flex:1, padding: Spacing.xl, justifyContent: "center",
     },
     title:{
-        ...Type.title1, marginBottom: Spacing.md, color: AppColors.text,
+        ...Type.title1, marginBottom: Spacing.md, color: colors.text,
     },
     body: {
         fontSize: 16,
         lineHeight: 22,
         marginBottom: Spacing.md,
-        color: AppColors.textSecondary,
+        color: colors.textSecondary,
     },
     bullet: {
-        fontSize: 14, marginBottom: 8, color: AppColors.textSecondary, lineHeight: 20,
+        fontSize: 14, marginBottom: 8, color: colors.textSecondary, lineHeight: 20,
     },
 
     linkBtn:{
     marginTop: 8,marginBottom: 4,
     paddingVertical: 12,paddingHorizontal: 16,
-    backgroundColor: AppColors.accentMuted,
-    borderRadius: Radius.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: AppColors.border,
+    backgroundColor: colors.accentMuted,
+    borderRadius: Radius.sm, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
     alignItems: "center",
     },
 
     linkText:{
-    color: AppColors.accent, fontWeight:"700",
+    color: colors.accent, fontWeight:"700",
     fontSize:14,},
 
     btnGap:{marginTop: 16, gap: 10,},
@@ -177,11 +182,12 @@ const styles = StyleSheet.create({
         width: 7,
         height: 7,
         borderRadius: 4,
-        backgroundColor: AppColors.fill,
+        backgroundColor: colors.fill,
     },
     dotActive: {
-        backgroundColor: AppColors.primary,
+        backgroundColor: colors.primary,
         width: 18,
     },
 
-});
+  });
+}

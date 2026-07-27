@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {View, Text, SectionList, StyleSheet, Pressable, RefreshControl} from "react-native";
 import Animated from "react-native-reanimated";
 import type { UnifiedItem } from "@/lib/types";
-import { AppColors, Radius, Spacing } from "@/constants/app-theme";
+import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type SectionType ={
     title: string; data: UnifiedItem[];
@@ -17,6 +18,7 @@ type Props = {
     refreshing: boolean;
     onRefresh: () => void;
     onScroll?: (event: any) => void;
+    extraBottomPadding?: number;
 };
 
 function fmtSectionDate(ymd:string) : string {
@@ -35,7 +37,10 @@ export default function UnifiedWeekView({
     onOpenRouteDetails,
     refreshing, onRefresh,
     onScroll,
+    extraBottomPadding = 0,
 }: Props) {
+    const { colors, radius } = useTheme();
+    const styles = useMemo(() => makeStyles(colors, radius), [colors, radius]);
 
 return(
     <View style={styles.safe}>
@@ -44,12 +49,12 @@ return(
       <AnimatedSectionList
         sections={sections}
         style={{flex: 1}}
-        contentContainerStyle={{paddingBottom: 120}}
+        contentContainerStyle={{paddingBottom: 120 + extraBottomPadding}}
         keyExtractor={(item) => item.key}
         onScroll={onScroll}
         scrollEventThrottle={16}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={AppColors.primary} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
         }
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
@@ -63,11 +68,11 @@ return(
           return (
 
             <View style={styles.itemRow}>
-              <View style={[styles.sourceBar, { backgroundColor: item.source === "timetable" ? AppColors.accent : AppColors.primary }]} />
+              <View style={[styles.sourceBar, { backgroundColor: item.source === "timetable" ? colors.accent : colors.primary }]} />
 
               <View style={[styles.itemCard, past && styles.itemCardPast]}>
 
-                <Text style={[styles.itemKicker, { color: item.source === "timetable" ? AppColors.accent : AppColors.primary }]}>
+                <Text style={[styles.itemKicker, { color: item.source === "timetable" ? colors.accent : colors.primary }]}>
                   {item.source === "timetable" ? "LECTURE" : "COURSEWORK"}
                 </Text>
 
@@ -122,12 +127,13 @@ return(
     </View>
 );}
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorTokens, radius: typeof Radius) {
+  return StyleSheet.create({
 
-safe:{flex:1, backgroundColor: AppColors.background},
+safe:{flex:1, backgroundColor: colors.background},
 
 rangeLabel:{
-    color: AppColors.textMuted,
+    color: colors.textMuted,
     fontSize: 13,
     fontWeight: "600",
     paddingHorizontal: Spacing.xl,
@@ -138,14 +144,14 @@ sectionHeader: {
   paddingHorizontal: Spacing.xl,
   paddingTop: Spacing.md,
   paddingBottom: Spacing.sm,
-  backgroundColor: AppColors.background,
+  backgroundColor: colors.background,
 },
 sectionHeaderText: {
   fontWeight: "700",
   fontSize: 13,
   textTransform: "uppercase",
   letterSpacing: 0.4,
-  color: AppColors.textMuted,
+  color: colors.textMuted,
 },
 
 itemRow: {
@@ -163,10 +169,10 @@ itemCard: {
   flex: 1,
   paddingHorizontal: Spacing.md,
   paddingVertical: Spacing.md,
-  borderRadius: Radius.md,
-  backgroundColor: AppColors.card,
+  borderRadius: radius.md,
+  backgroundColor: colors.card,
   borderWidth: StyleSheet.hairlineWidth,
-  borderColor: AppColors.border,
+  borderColor: colors.border,
 },
 itemCardPast: {
   opacity: 0.45,
@@ -180,39 +186,40 @@ itemKicker: {
 itemTitle: {
   fontWeight: "700",
   fontSize: 15,
-  color: AppColors.text,
+  color: colors.text,
 },
 itemTime: {
-  color: AppColors.textSecondary,
+  color: colors.textSecondary,
   marginTop: 2,
   fontSize: 13,
 },
 itemMeta: {
   fontSize: 12,
-  color: AppColors.textMuted,
+  color: colors.textMuted,
 },
 itemMetaPast: {
-  color: AppColors.textTertiary,
+  color: colors.textTertiary,
 },
 itemMetaLeave: {
-  color: AppColors.success,
+  color: colors.success,
   fontWeight: "700",
 },
 itemTextPast: {
-  color: AppColors.textMuted,
+  color: colors.textMuted,
 },
 routeBtn: {
   marginTop: 8,
   alignSelf: "flex-start",
 },
 routeBtnText: {
-  color: AppColors.accent,
+  color: colors.accent,
   fontSize: 13,
   fontWeight: "600",
 },
 emptyText: {
   padding: Spacing.lg,
-  color: AppColors.textMuted,
+  color: colors.textMuted,
 },
 
-});
+  });
+}

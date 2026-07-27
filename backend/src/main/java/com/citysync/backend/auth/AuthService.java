@@ -1,18 +1,20 @@
 package com.citysync.backend.auth;
 
-import com.citysync.backend.user.User;
-import com.citysync.backend.user.UserRepo;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Value;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import com.citysync.backend.user.User;
+import com.citysync.backend.user.UserRepo;
+
 import jakarta.mail.internet.InternetAddress;
 
 @Service
@@ -131,7 +133,7 @@ public class AuthService {
         msg.setSubject(subject);
         msg.setText(
 
-                "Hi!!,\n\n" +
+                "Hi,\n\n" +
                         "Your CitySync verification code is:\n\n" +
                         "    " + code + "\n\n" +
                         "This code expires in " + CodeExprMins + " minutes.\n\n" +

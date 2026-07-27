@@ -1,16 +1,14 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, router } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import LoginScreen from '@/components/LoginScreen';
-import { AppColors } from '@/constants/app-theme';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
 
 export const unstable_settings = {
@@ -21,17 +19,16 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 function AppGate() {
-  const colorScheme = useColorScheme();
-  const { auth, login} = useAuth();
-
+  const { auth, login } = useAuth();
+  const { scheme, colors } = useTheme();
 
   useEffect(() => {SplashScreen.hideAsync();}, []);//hides once layout has mounted
 
 
   if (auth.status === 'loading'){//loading spinner while onboarding checked
     return (
-      <View style={{ flex: 1, backgroundColor: AppColors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={AppColors.primary} size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color={colors.primary} size="large" />
       </View>
     );
   }
@@ -41,7 +38,7 @@ function AppGate() {
   }
 
   return (//shows app if logged in
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         {/*main tab app screen*/}
@@ -51,16 +48,18 @@ function AppGate() {
         {/*fallback screen for any other outes*/}
       </Stack>
 
-    </ThemeProvider>
+    </NavThemeProvider>
   );
 }
 
   export default function RootLayout() {//making auth global by wrapping on app
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
-            <AuthProvider>
-                <AppGate />
-            </AuthProvider>
+            <ThemeProvider>
+                <AuthProvider>
+                    <AppGate />
+                </AuthProvider>
+            </ThemeProvider>
         </GestureHandlerRootView>
     );
 }

@@ -1,19 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView,StyleSheet,
-  Text, TextInput, View,} from "react-native";
+  Text, TextInput, View, Switch} from "react-native";
 import Animated from "react-native-reanimated";
 import { getUserId, preferencesApi, accountApi, delUserId } from "@/lib/api";
 import {PrimBtn, DangerBtn} from "@/components/home/ActionBtns";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
+import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
 import {useAuth} from "@/hooks/useAuth";
-import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
+import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 
-const C = AppColors;
-
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, children, colors }: { title: string; children: React.ReactNode; colors: ColorTokens }) {
 //card wrpper for each section
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Card style={styles.card}>
       <Text style={styles.cardTitle}>{title}</Text>
@@ -22,9 +23,9 @@ function SectionCard({ title, children }: { title: string; children: React.React
   );
 }
 
-function FieldLabel({ label }: { label: string }) {
-
+function FieldLabel({ label, colors }: { label: string; colors: ColorTokens }) {
 //for from fields
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return <Text style={styles.fieldLabel}>{label}</Text>;
 }
 
@@ -39,6 +40,9 @@ function errorMessage(e: any, fallback: string): string {
 }
 
 export default function SettingsScreen() {
+  const { colors, scheme, glass, setScheme, setGlass } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const tabBarPadding = useTabBarPadding();
 
   const [homeAddress, setHomeAddress] = useState("");//what the user can change is home address
   const [uniAddress, setUniAddress] = useState(
@@ -235,18 +239,49 @@ const {logout} = useAuth();
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <Animated.ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, { paddingBottom: Spacing.lg + tabBarPadding }]}
           keyboardShouldPersistTaps="handled"
           onScroll={onScroll}
           scrollEventThrottle={16}
         >
 
+          {/*Appearance */}
+          <SectionCard title="Appearance" colors={colors}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Dark Mode</Text>
+                <Text style={styles.hint}>Switch between light and dark appearance.</Text>
+              </View>
+              <Switch
+                value={scheme === "dark"}
+                onValueChange={(v) => setScheme(v ? "dark" : "light")}
+                trackColor={{ false: colors.fill, true: colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+
+            <View style={[styles.toggleRow, { marginTop: Spacing.md }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Liquid Glass</Text>
+                <Text style={styles.hint}>
+                  iOS 26-style translucent glass for the tab bar, nav bar and buttons.
+                </Text>
+              </View>
+              <Switch
+                value={glass}
+                onValueChange={setGlass}
+                trackColor={{ false: colors.fill, true: colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+          </SectionCard>
+
           {/*Travel settings */}
-          <SectionCard title="Travel Settings">
+          <SectionCard title="Travel Settings" colors={colors}>
             <Text style={styles.sub}>
                 Citysync uses your saved location details to calculate travel timea and generate leave-soon alerts.
             </Text>
-            <FieldLabel label="Home address or postcode" />
+            <FieldLabel label="Home address or postcode" colors={colors} />
 
             <TextInput
 
@@ -254,7 +289,7 @@ const {logout} = useAuth();
               onChangeText={setHomeAddress}
               placeholder="e.g. LU4 8AY or 123 Portland road, Luton"
               //^example address for users which is mine
-              placeholderTextColor={C.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
@@ -264,13 +299,13 @@ const {logout} = useAuth();
               Used to calculate your travel time to City University A postcode also works.
             </Text>
 
-            <FieldLabel label="Destination (pre-filled)" />
+            <FieldLabel label="Destination (pre-filled)" colors={colors} />
 
             <TextInput
 
               value={uniAddress}
               onChangeText={setUniAddress}
-              placeholderTextColor={C.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
@@ -281,7 +316,7 @@ const {logout} = useAuth();
           </SectionCard>
 
           {/* Buffer settings */}
-          <SectionCard title="Leave buffer">
+          <SectionCard title="Leave buffer" colors={colors}>
 
             <Text style={styles.sub}>
               Extra minutes added on top of travel time before your lecture starts.
@@ -313,19 +348,19 @@ const {logout} = useAuth();
               onChangeText={setBufferMins}
               keyboardType="numeric"
               placeholder="or type a number"
-              placeholderTextColor={C.textTertiary}
+              placeholderTextColor={colors.textTertiary}
               style={[styles.input, { textAlign: "center" }]}
             />
             <Text style={styles.hint}>Max 300 minutes(5 hours), default is 10 mins.</Text>
           </SectionCard>
 
           {/*talks how leave-soon works */}
-          <SectionCard title="How leave soon alerts work">
+          <SectionCard title="How leave soon alerts work" colors={colors}>
             <Text style={styles.sub}>
               {"CitySync calculates your leave time as:\n\n"}
             </Text>
 
-            <Text style={{ color: C.primary, fontWeight: "700", fontSize: 13 }}>
+            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 13 }}>
               {"Lecture start − (travel time + your buffer)"}
             </Text>
 
@@ -334,7 +369,7 @@ const {logout} = useAuth();
             </Text>
           </SectionCard>
 
-                    <SectionCard title="Account and data">
+                    <SectionCard title="Account and data" colors={colors}>
                       <Text style={styles.sub}>
                         Deleting your account will remove your CitySync account and stored data from the backend
                       </Text>
@@ -343,13 +378,13 @@ const {logout} = useAuth();
 
                       {showDeleteCodeInput ? (
                         <>
-                          <FieldLabel label="Enter delete verification code" />
+                          <FieldLabel label="Enter delete verification code" colors={colors} />
 
                           <TextInput
                             value={deleteCode}
                             onChangeText={setDeleteCode}
                             placeholder="Enter the code sent to your email"
-                            placeholderTextColor={C.textTertiary}
+                            placeholderTextColor={colors.textTertiary}
                             autoCapitalize="none"
                             autoCorrect={false}
                             style={styles.input}
@@ -376,24 +411,29 @@ const {logout} = useAuth();
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
 
-  safe: {flex: 1,backgroundColor: C.background,},
+  safe: {flex: 1,backgroundColor: colors.background,},
   scroll: {padding: Spacing.xl,gap: Spacing.lg,},
   card: {gap: 10,},
-  cardTitle: { ...Type.headline, color: C.text, marginBottom: 4,
-  },fieldLabel: {fontSize: 13,fontWeight: "600",color: C.textSecondary,},
+  cardTitle: { ...Type.headline, color: colors.text, marginBottom: 4,
+  },fieldLabel: {fontSize: 13,fontWeight: "600",color: colors.textSecondary,},
 
-  input: {backgroundColor: C.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: C.border,borderRadius: Radius.sm,padding: 12,color: C.text,fontSize: 15,},
-  hint: {fontSize: 12,color: C.textMuted,},
-  sub: {fontSize: 13,color: C.textSecondary,lineHeight: 20,},
+  input: {backgroundColor: colors.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: colors.border,borderRadius: Radius.sm,padding: 12,color: colors.text,fontSize: 15,},
+  hint: {fontSize: 12,color: colors.textMuted,},
+  sub: {fontSize: 13,color: colors.textSecondary,lineHeight: 20,},
+
+  toggleRow: {flexDirection: "row",alignItems: "center",gap: Spacing.md,},
+  toggleLabel: {fontSize: 15,fontWeight: "700",color: colors.text,},
 
   bufferRow: {flexDirection: "row",alignItems: "center",justifyContent: "center",gap: 20,marginVertical: 8,},
-  bufferBtn: {backgroundColor: C.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: C.border,borderRadius: Radius.sm,width: 56,height: 56,
+  bufferBtn: {backgroundColor: colors.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: colors.border,borderRadius: Radius.sm,width: 56,height: 56,
     alignItems: "center",justifyContent: "center",},
-  bufferBtnText: {color: C.text,fontSize: 20,fontWeight: "700",},
+  bufferBtnText: {color: colors.text,fontSize: 20,fontWeight: "700",},
 
   bufferDisplay: {alignItems: "center",minWidth: 80,},
-  bufferValue: {color: C.primary,fontSize: 40,fontWeight: "800",},
-  bufferUnit: {color: C.textMuted, fontSize: 13,},
-});
+  bufferValue: {color: colors.primary,fontSize: 40,fontWeight: "800",},
+  bufferUnit: {color: colors.textMuted, fontSize: 13,},
+  });
+}

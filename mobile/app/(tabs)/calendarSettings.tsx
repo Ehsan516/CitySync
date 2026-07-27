@@ -7,7 +7,9 @@ import {PrimBtn, SecBtn} from "@/components/home/ActionBtns";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
-import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
+import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
+import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 type CalRow = {//calendar object for rendering
   id: string;
@@ -17,8 +19,9 @@ type CalRow = {//calendar object for rendering
   allowsModifications?: boolean;
 };
 
-function Pill({ label }: { label: string }) {
+function Pill({ label, colors }: { label: string; colors: ColorTokens }) {
 //ui for displaying data
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.pill}>
       <Text style={styles.pillText}>
@@ -29,6 +32,10 @@ function Pill({ label }: { label: string }) {
 }
 
 export default function CalendarSettingsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const tabBarPadding = useTabBarPadding();
+
   const [status, setStatus] = useState("idle");//ui state for loading status msgs
   const [cals, setCals] = useState<CalRow[]>([]);//all calendars on device
   const [selected, setSelected] = useState<Record<string, boolean>>({}); //calendar ideas with boolean for toggle
@@ -114,10 +121,10 @@ export default function CalendarSettingsScreen() {
   const { scrollY, onScroll } = useScrollHeader();
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: AppColors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title="Timetable Calendars" subtitle={status} scrollY={scrollY} />
       <Animated.ScrollView
-        contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 40, gap: Spacing.md }}
+        contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 40 + tabBarPadding, gap: Spacing.md }}
         onScroll={onScroll}
         scrollEventThrottle={16}
       >
@@ -129,8 +136,8 @@ export default function CalendarSettingsScreen() {
 
           <View style={styles.pillRow}>
 
-            <Pill label={`Calendars: ${cals.length}`} />
-            <Pill label={`Selected: ${selectedCount}`} />
+            <Pill label={`Calendars: ${cals.length}`} colors={colors} />
+            <Pill label={`Selected: ${selectedCount}`} colors={colors} />
           </View>
 
           <View style={styles.actionRow}>
@@ -181,7 +188,7 @@ export default function CalendarSettingsScreen() {
             <Switch
               value={!!selected[c.id]}
               onValueChange={(v) => setSelected((prev) => ({ ...prev, [c.id]: v }))}
-              trackColor={{ false: AppColors.fill, true: AppColors.primary }}
+              trackColor={{ false: colors.fill, true: colors.primary }}
               thumbColor="#fff"
             />
           </Card>
@@ -191,27 +198,29 @@ export default function CalendarSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  introText: { color: AppColors.textSecondary, lineHeight: 20 },
-  pillRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md, flexWrap: "wrap" },
-  actionRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md + 2 },
-  pill: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: Radius.pill,
-    backgroundColor: AppColors.card2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AppColors.border,
-  },
-  pillText: { color: AppColors.textSecondary, fontWeight: "600", fontSize: 12 },
-  calRow: {
-    flexDirection: "row",
-    gap: Spacing.md,
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  calTitle: { ...Type.callout, color: AppColors.text, fontSize: 16, fontWeight: "800" },
-  calSub: { color: AppColors.textSecondary, marginTop: 2 },
-  calMuted: { color: AppColors.textMuted, marginTop: 2, fontSize: 13 },
-  calId: { color: AppColors.textTertiary, fontSize: 11, marginTop: 6 },
-});
+function makeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
+    introText: { color: colors.textSecondary, lineHeight: 20 },
+    pillRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md, flexWrap: "wrap" },
+    actionRow: { flexDirection: "row", gap: Spacing.sm, marginTop: Spacing.md + 2 },
+    pill: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: Radius.pill,
+      backgroundColor: colors.card2,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    pillText: { color: colors.textSecondary, fontWeight: "600", fontSize: 12 },
+    calRow: {
+      flexDirection: "row",
+      gap: Spacing.md,
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    calTitle: { ...Type.callout, color: colors.text, fontSize: 16, fontWeight: "800" },
+    calSub: { color: colors.textSecondary, marginTop: 2 },
+    calMuted: { color: colors.textMuted, marginTop: 2, fontSize: 13 },
+    calId: { color: colors.textTertiary, fontSize: 11, marginTop: 6 },
+  });
+}

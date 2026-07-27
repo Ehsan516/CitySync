@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import type { CourseworkDto } from "@/lib/types";
 import { calcGrade, gradeColour, gradeLabel } from "@/lib/CwHelpers";
-import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
+import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function GradeCard({ moduleId, coursework }: { moduleId: number; coursework: CourseworkDto[] }) {
+  const { colors, radius } = useTheme();
+  const gradeStyles = useMemo(() => makeStyles(colors, radius), [colors, radius]);
+
   const cwForModule = coursework.filter((c) => c.moduleId === moduleId);
   //only use cw belonging to current module
   const grade = calcGrade(cwForModule);//calculates allocated,completed weighting and min/max grades
@@ -73,14 +77,14 @@ export default function GradeCard({ moduleId, coursework }: { moduleId: number; 
       </View>
 
       {allocWeight > 100 &&( //if saved weighting > 100
-        <Text style = {[gradeStyles.hint, {color: AppColors.danger}]}>
+        <Text style = {[gradeStyles.hint, {color: colors.danger}]}>
             Invalid module input: coursework weighting exceeds 100%
         </Text>
       )}
 
       {remainingWeight === 0 && (
 
-        <Text style={[gradeStyles.hint, { color: AppColors.success }]}>
+        <Text style={[gradeStyles.hint, { color: colors.success }]}>
 
           All coursework submitted, final grade is {Math.round(confirmedMark)}%
         </Text>
@@ -89,30 +93,32 @@ export default function GradeCard({ moduleId, coursework }: { moduleId: number; 
   );
 }
 
-const gradeStyles = StyleSheet.create({
+function makeStyles(colors: ColorTokens, radius: typeof Radius) {
+  return StyleSheet.create({
 
   container: {
     marginTop: Spacing.md,
     padding: Spacing.md,
-    borderRadius: Radius.md,
-    backgroundColor: AppColors.card2,
+    borderRadius: radius.md,
+    backgroundColor: colors.card2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: AppColors.border,
+    borderColor: colors.border,
     gap: Spacing.sm,
   },
 
-  heading: { ...Type.footnote, color: AppColors.textSecondary },
+  heading: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
 
-  barTrack: { flexDirection: "row", height: 6, borderRadius: 99, overflow: "hidden", backgroundColor: AppColors.fill },
-  barFill: { backgroundColor: AppColors.primary, borderRadius: 99 },
-  barLabel: { color: AppColors.textMuted, fontSize: 11, fontWeight: "600" },
+  barTrack: { flexDirection: "row", height: 6, borderRadius: 99, overflow: "hidden", backgroundColor: colors.fill },
+  barFill: { backgroundColor: colors.primary, borderRadius: 99 },
+  barLabel: { color: colors.textMuted, fontSize: 11, fontWeight: "600" },
 
   rangeRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginTop: Spacing.xs },
   rangeBox: { alignItems: "center", flex: 1 },
-  rangeValue: { color: AppColors.text, fontSize: 22, fontWeight: "800" },
+  rangeValue: { color: colors.text, fontSize: 22, fontWeight: "800" },
   rangeLabel: { fontSize: 12, fontWeight: "700", marginTop: 2 },
 
-  rangeSep: { color: AppColors.textMuted, fontSize: 15, paddingHorizontal: Spacing.sm },
-  hint: { color: AppColors.textMuted, fontSize: 11, lineHeight: 16 },
+  rangeSep: { color: colors.textMuted, fontSize: 15, paddingHorizontal: Spacing.sm },
+  hint: { color: colors.textMuted, fontSize: 11, lineHeight: 16 },
 
-});
+  });
+}

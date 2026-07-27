@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ActivityIndicator,Alert,KeyboardAvoidingView,Platform,Pressable,SafeAreaView,
   StyleSheet,Text,TextInput,View,} from "react-native";
 import {authApi, ApiError} from "@/lib/api";
 import Card from "@/components/ui/Card";
-import { AppColors, Radius, Spacing, Type } from "@/constants/app-theme";
+import { GlassLayer } from "@/components/home/ActionBtns";
+import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 
 
 type Props = {
@@ -13,6 +15,9 @@ type Props = {
  *1 enter email, backend verification code sent
  *2 enter 6 digit code, tap verify to POST /auth/verify-code to returns userId */
 export default function LoginScreen({ onLogin }: Props) {
+  const { colors, glass, radius } = useTheme();
+  const s = useMemo(() => makeStyles(colors, radius), [colors, radius]);
+
   //where user is on email input or code verif
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
@@ -102,8 +107,8 @@ export default function LoginScreen({ onLogin }: Props) {
                 style={s.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder="youremaillol@city.ac.uk"
-                placeholderTextColor={AppColors.textTertiary}
+                placeholder="your email"
+                placeholderTextColor={colors.textTertiary}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 autoCorrect={false}
@@ -112,11 +117,16 @@ export default function LoginScreen({ onLogin }: Props) {
 
               <Pressable
 
-                style={({ pressed }) => [s.btn, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [
+                  s.btn,
+                  glass && { backgroundColor: "transparent", borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.glassStroke },
+                  pressed && { opacity: 0.85 },
+                ]}
                 onPress={handleRequestCode}
 
                 disabled={loading}
               >
+                {glass ? <GlassLayer colors={colors} tint={colors.primaryGlassBg} /> : null}
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
@@ -137,16 +147,21 @@ export default function LoginScreen({ onLogin }: Props) {
                 value={code}
                 onChangeText={setCode}
                 placeholder="000000"
-                placeholderTextColor={AppColors.textTertiary}
+                placeholderTextColor={colors.textTertiary}
                 keyboardType="number-pad"
                 maxLength={6}
                 editable={!loading}
               />
               <Pressable
-                style={({ pressed }) => [s.btn, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [
+                  s.btn,
+                  glass && { backgroundColor: "transparent", borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.glassStroke },
+                  pressed && { opacity: 0.85 },
+                ]}
                 onPress={handleVerifyCode}
                 disabled={loading}
               >
+                {glass ? <GlassLayer colors={colors} tint={colors.primaryGlassBg} /> : null}
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
@@ -167,29 +182,30 @@ export default function LoginScreen({ onLogin }: Props) {
   );
 }
 
-    const s = StyleSheet.create({
+    function makeStyles(colors: ColorTokens, radius: typeof Radius) {
+      return StyleSheet.create({
 
-        safe:{ flex: 1, backgroundColor: AppColors.background },
+        safe:{ flex: 1, backgroundColor: colors.background },
         flex:{ flex: 1 },
 
         //login card centers vertically
         container: {flex: 1, justifyContent: "center", padding: Spacing.xl, gap: Spacing.xxl,},
         hero: { alignItems: "center", gap: 6 },
-        appName: {fontSize: 36, fontWeight: "800", color: AppColors.text,letterSpacing: -0.5,},
-        tagline: { color: AppColors.textMuted, fontSize: 14 },
+        appName: {fontSize: 36, fontWeight: "800", color: colors.text,letterSpacing: -0.5,},
+        tagline: { color: colors.textMuted, fontSize: 14 },
 
         card: {gap: 12,},
-        cardTitle: { color: AppColors.text, ...Type.title3 },
-        hint:  { color: AppColors.textSecondary, fontSize: 13, lineHeight: 20 },
-        label: { color: AppColors.textMuted, fontWeight: "600", fontSize: 13 },
+        cardTitle: { color: colors.text, ...Type.title3 },
+        hint:  { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
+        label: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
 
         input: {
-          backgroundColor: AppColors.card2,
+          backgroundColor: colors.card2,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: AppColors.border,
-          borderRadius: Radius.sm,
+          borderColor: colors.border,
+          borderRadius: radius.sm,
           padding: 14,
-          color: AppColors.text,
+          color: colors.text,
           fontSize: 16,
         },
         codeInput: {
@@ -198,17 +214,19 @@ export default function LoginScreen({ onLogin }: Props) {
           letterSpacing: 10,
           textAlign: "center",
         },
-        emailHighlight: { color: AppColors.text, fontWeight: "700" },
+        emailHighlight: { color: colors.text, fontWeight: "700" },
 
         btn: {
-          backgroundColor: AppColors.primary,
-          borderRadius: Radius.md,
+          backgroundColor: colors.primary,
+          borderRadius: radius.md,
           paddingVertical: 14,
           alignItems: "center",
           marginTop: 4,
+          overflow: "hidden",
         },
         btnText: { color: "white", fontWeight: "800", fontSize: 16 },
 
         back: { alignItems: "center", paddingVertical: 8 },
-        backText: { color: AppColors.textMuted, fontSize: 13 },
+        backText: { color: colors.textMuted, fontSize: 13 },
       });
+    }

@@ -5,8 +5,10 @@ import HeaderCard from "@/components/home/HeaderCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import { SecBtn } from "@/components/home/ActionBtns";
-import { AppColors, Spacing, Type } from "@/constants/app-theme";
+import { Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
+import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
 import type { CourseworkDto, ModuleDto } from "@/lib/types";
 import { Alert, KeyboardAvoidingView, Platform, RefreshControl, SafeAreaView, StyleSheet, Text} from "react-native";
 import ModuleCard from "@/components/home/ModuleCard";
@@ -58,6 +60,9 @@ export default function HomeScreen() {
   const [editLocation, setEditLocation] = useState("");
 
   const { logout } = useAuth();
+  const { colors } = useTheme();
+  const tabBarPadding = useTabBarPadding();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   async function loadModules() {//GET/users/{id}/modules
     setStatus("loading modules...");
@@ -397,11 +402,11 @@ export default function HomeScreen() {
       />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={[styles.container, { paddingBottom: 40 + tabBarPadding }]}
           onScroll={onScroll}
           scrollEventThrottle={16}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onPullToRefresh} tintColor={AppColors.primary} />
+            <RefreshControl refreshing={refreshing} onRefresh={onPullToRefresh} tintColor={colors.primary} />
           }
         >
           <HeaderCard stats={stats} />
@@ -496,22 +501,24 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: AppColors.background,
-  },
-  container: {
-    padding: Spacing.lg,
-    paddingBottom: 40,
-    gap: Spacing.md,
-  },
-  gradeCard: {
-    alignItems: "center",
-    gap: 6,
-  },
-  gradeHeading: { ...Type.footnote, color: AppColors.textSecondary },
-  gradeValue: { fontSize: 32, fontWeight: "800" },
-  gradeLabel: { ...Type.footnote, fontSize: 14 },
-  gradeHint: { color: AppColors.textMuted, fontSize: 12, textAlign: "center", lineHeight: 17 },
-});
+function makeStyles(colors: ColorTokens) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: Spacing.lg,
+      paddingBottom: 40,
+      gap: Spacing.md,
+    },
+    gradeCard: {
+      alignItems: "center",
+      gap: 6,
+    },
+    gradeHeading: { ...Type.footnote, color: colors.textSecondary },
+    gradeValue: { fontSize: 32, fontWeight: "800" },
+    gradeLabel: { ...Type.footnote, fontSize: 14 },
+    gradeHint: { color: colors.textMuted, fontSize: 12, textAlign: "center", lineHeight: 17 },
+  });
+}

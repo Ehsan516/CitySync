@@ -1,18 +1,23 @@
 import { Tabs } from 'expo-router';
 import { Platform, StyleSheet } from 'react-native';
 import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import TabBarBackground from '@/components/ui/tab-bar-background';
-import { AppColors } from '@/constants/app-theme';
+import { GlassTabBar } from '@/constants/app-theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
+  const { colors, glass, radius } = useTheme();
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: AppColors.primary,
-        tabBarInactiveTintColor: AppColors.textMuted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -20,16 +25,29 @@ export default function TabLayout() {
           fontSize: 10,
           fontWeight: '600',
         },
-        tabBarStyle: Platform.select({
-          ios: {
-            borderTopWidth: StyleSheet.hairlineWidth,
-            borderTopColor: AppColors.separator,
-          },
-          default: {
-            backgroundColor: AppColors.card,
-            borderTopColor: AppColors.border,
-          },
-        }),
+        tabBarStyle: glass
+          ? {
+              position: 'absolute',
+              left: GlassTabBar.sideMargin,
+              right: GlassTabBar.sideMargin,
+              bottom: insets.bottom + GlassTabBar.bottomMargin,
+              height: GlassTabBar.height,
+              borderRadius: radius.pill,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: colors.glassStroke,
+              overflow: 'hidden',
+              elevation: 0,
+            }
+          : Platform.select({
+              ios: {
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: colors.separator,
+              },
+              default: {
+                backgroundColor: colors.card,
+                borderTopColor: colors.border,
+              },
+            }),
       }}>
       {/* Modules and cw CRUD */}
       <Tabs.Screen
