@@ -1,7 +1,10 @@
 package com.citysync.backend.user;
 
+import com.citysync.backend.travel.TravelService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class UserPrefService {
@@ -22,8 +25,8 @@ public class UserPrefService {
     public UserPrefDto get(Long userId) {
 
         return prefsRepository.findById(userId) //checks preferences
-                .map(p -> new UserPrefDto(p.getHomeAddress(), p.getCityAddress(), p.getBufferMins())) //maps entity to dto
-                .orElseGet(() -> new UserPrefDto(null, null, 0));//if it doesnt exist then load defaults
+                .map(UserPrefService::toDto) //maps entity to dto
+                .orElseGet(() -> new UserPrefDto(null, null, 0, "TRANSIT", List.of(), null, 0));//if it doesnt exist then load defaults
 
     }
 
@@ -37,6 +40,17 @@ public class UserPrefService {
             throw new IllegalArgumentException("bufferMinutes must be between 0 and 300");
         }
 
+        int returnBuffer = (dto.returnBufferMins() == null) ? 0 : dto.returnBufferMins();
+        if (returnBuffer < 0 || returnBuffer > 300) {
+            throw new IllegalArgumentException("returnBufferMins must be between 0 and 300");
+        }
+
+        /*reusing the travel layer validators so the allowed modes can never drift from what the
+          routes api will actually accept, an unknown value falls back to a safe default*/
+        String preferredMode = TravelService.normaliseMode(dto.preferredMode());
+        List<String> transitModes = TravelService.parseTransitModes(joinCsv(dto.transitModes()));
+        String routingPref = TravelService.normaliseTransitRoutingPref(dto.transitRoutingPref());
+
         User user = userRepository.findById(userId)//checks if user exists
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -48,9 +62,38 @@ public class UserPrefService {
         prefs.setBufferMins(buffer);
         //^normalising strings and triming white space
 
+        prefs.setPreferredMode(preferredMode);
+        prefs.setTransitModes(transitModes.isEmpty() ? null : String.join(",", transitModes));
+        prefs.setTransitRoutingPref(routingPref);
+        prefs.setReturnBufferMins(returnBuffer);
+
         UserPref saved = prefsRepository.save(prefs);//changes saved
 
-        return new UserPrefDto(saved.getHomeAddress(), saved.getCityAddress(), saved.getBufferMins());//returns saved vals bacl
+        return toDto(saved);//returns saved vals bacl
+    }
+
+    //single place the entity turns into a dto so get and upsert can never disagree
+    private static UserPrefDto toDto(UserPref p) {
+        return new UserPrefDto(
+                p.getHomeAddress(),
+                p.getCityAddress(),
+                p.getBufferMins(),
+                p.getPreferredMode() == null ? "TRANSIT" : p.getPreferredMode(),
+                splitCsv(p.getTransitModes()),
+                p.getTransitRoutingPref(),
+                p.getReturnBufferMins()
+        );
+    }
+
+    //db stores csv, the app works with a list
+    private static List<String> splitCsv(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        return List.of(csv.split(","));
+    }
+
+    private static String joinCsv(List<String> values) {
+        if (values == null || values.isEmpty()) return null;
+        return String.join(",", values);
     }
 
     //helper to store address

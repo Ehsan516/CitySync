@@ -126,7 +126,15 @@ CREATE TABLE public.user_preferences (
     cityuni_address character varying(255),
     buffer_minutes integer DEFAULT 0 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    city_uni_address character varying(255)
+    city_uni_address character varying(255),
+    preferred_mode character varying(24) DEFAULT 'TRANSIT'::character varying NOT NULL,
+    transit_modes character varying(64),
+    transit_routing_pref character varying(24),
+    return_buffer_minutes integer DEFAULT 0 NOT NULL,
+    CONSTRAINT user_preferences_preferred_mode_chk CHECK ((preferred_mode = ANY (ARRAY['TRANSIT'::character varying, 'DRIVE'::character varying, 'WALK'::character varying, 'BICYCLE'::character varying, 'TWO_WHEELER'::character varying]))),
+    CONSTRAINT user_preferences_transit_routing_pref_chk CHECK (((transit_routing_pref IS NULL) OR (transit_routing_pref = ANY (ARRAY['LESS_WALKING'::character varying, 'FEWER_TRANSFERS'::character varying])))),
+    CONSTRAINT user_preferences_buffer_minutes_chk CHECK (((buffer_minutes >= 0) AND (buffer_minutes <= 300))),
+    CONSTRAINT user_preferences_return_buffer_minutes_chk CHECK (((return_buffer_minutes >= 0) AND (return_buffer_minutes <= 300)))
 );
 
 
