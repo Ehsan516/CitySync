@@ -1,6 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import type { CourseworkDto, ModuleDto, TravelDetails, UserPrefDto } from "@/lib/types";
+import type {
+  CourseworkDto,
+  ModuleDto,
+  RouteOption,
+  TransitRoutingPref,
+  TransitSubMode,
+  TravelDetails,
+  TravelMode,
+  TravelPlan,
+  TravelPlanQuery,
+  UserPrefDto,
+} from "@/lib/types";
 
 function getApiBase(): string{
 //func to determine backend url when running expo go
@@ -71,12 +82,25 @@ async function requestJson<T>(path: string, options: RequestInit = {}): Promise<
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+/**builds a query string, skipping anything null/undefined/blank
+ * both endpoints get trimmed and encoded, the old hand rolled version only trimmed origin*/
+function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
+  const parts: string[] = [];
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined) continue;
+
+    const str = String(value).trim();
+    if (str === "") continue;
+
+    parts.push(`${key}=${encodeURIComponent(str)}`);
+  }
+
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
+}
+
 function travelQuery(origin: string, destination: string, arrivalTime?: string): string {
-  const params =
-    `?origin=${encodeURIComponent(origin.trim())}` +
-    `&destination=${encodeURIComponent(destination)}` +
-    (arrivalTime ? `&arrivalTime=${encodeURIComponent(arrivalTime)}` : "");
-  return params;
+  return buildQuery({ origin, destination, arrivalTime });
 }
 
 export const modulesApi = {
@@ -143,7 +167,20 @@ export const courseworkApi = {
 export const preferencesApi = {
   get: (userId: number) => requestJson<UserPrefDto>(`/users/${userId}/preferences`),
 
-  update: (userId: number, body: { homeAddress: string; UniLoc: string; bufferMins: number }) =>
+  update: (
+    userId: number,
+    body: {
+      homeAddress: string;
+      UniLoc: string;
+      bufferMins: number;
+
+      //travel prefs, optional so existing callers don't have to pass them
+      preferredMode?: TravelMode;
+      transitModes?: TransitSubMode[];
+      transitRoutingPref?: TransitRoutingPref | null;
+      returnBufferMins?: number;
+    }
+  ) =>
     requestJson<UserPrefDto>(`/users/${userId}/preferences`, {
       method: "PUT",
       body: JSON.stringify(body),
@@ -180,6 +217,53 @@ export const travelApi = {
 
       return json;
     } catch {
+      return null;
+    }
+  },
+
+  /**full journey plan with several options, this is what the departure board renders
+   *
+   * unlike the older helpers this throws instead of swallowing errors, the travel screen needs
+   * to tell the user "couldn't refresh" rather than silently showing a stale board
+   */
+  getPlan(query: TravelPlanQuery, signal?: AbortSignal): Promise<TravelPlan> {
+    const qs = buildQuery({
+      origin: query.origin,
+      destination: query.destination,
+      mode: query.mode,
+      departureTime: query.departureTime,
+      arrivalTime: query.arrivalTime,
+      transitModes: query.transitModes?.length ? query.transitModes.join(",") : null,
+      transitRoutingPref: query.transitRoutingPref,
+      alternatives: query.alternatives ?? true,
+    });
+
+    return requestJson<TravelPlan>(`/travel/plan${qs}`, { signal });
+  },
+
+  /**last service of the day that still gets the user home
+   * backend answers 204 when nothing is left, which requestJson surfaces as undefined*/
+  async getLastService(
+    origin: string,
+    destination: string,
+    mode: TravelMode = "TRANSIT",
+    transitModes?: TransitSubMode[] | null,
+    transitRoutingPref?: TransitRoutingPref | null,
+    signal?: AbortSignal
+  ): Promise<RouteOption | null> {
+    const qs = buildQuery({
+      origin,
+      destination,
+      mode,
+      transitModes: transitModes?.length ? transitModes.join(",") : null,
+      transitRoutingPref,
+    });
+
+    try {
+      const json = await requestJson<RouteOption | undefined>(`/travel/last-service${qs}`, { signal });
+      return json ?? null;
+    } catch {
+      //a missing last-service is never worth blocking the screen over
       return null;
     }
   },
