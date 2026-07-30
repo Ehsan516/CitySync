@@ -22,6 +22,7 @@ const MAPPING = {
   'calendar': 'event',
   'list.bullet': 'list',
   'gearshape.fill': 'settings',
+  'tram.fill': 'directions-transit',
 } as IconMapping;
 
 /**
