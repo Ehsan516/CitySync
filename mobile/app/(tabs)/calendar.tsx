@@ -1,17 +1,31 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, SafeAreaView, Text, View, Modal, Pressable, ScrollView, StyleSheet, Switch } from "react-native";
+import { Alert, SafeAreaView, Text, View, StyleSheet, Switch } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
-import * as Calendar from "expo-calendar";
 
-import { getSelectedCalendarIds, getOnSiteToday, setOnSiteToday } from "@/lib/prefs";
+import {
+  getOnSiteToday,
+  setOnSiteToday,
+  getCachedTransitModes,
+  getCachedTravelMode,
+  setCachedTransitModes,
+  setCachedTravelMode,
+} from "@/lib/prefs";
 import { getUserId, courseworkApi, preferencesApi, travelApi } from "@/lib/api";
+import { loadEventsBetween } from "@/lib/deviceCalendar";
 import { startOfWeek, addDays, ymd } from "@/lib/dateUtils";
-import type { CourseworkDto, TravelDetails, UnifiedItem } from "@/lib/types";
+import type {
+  CourseworkDto,
+  TransitRoutingPref,
+  TransitSubMode,
+  TravelMode,
+  UnifiedItem,
+} from "@/lib/types";
 import UnifiedWeekView from "@/components/calendar/UnifiedWeekView";
+import RouteSheet, { type RouteSheetTarget } from "@/components/travel/RouteSheet";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { SecBtn } from "@/components/home/ActionBtns";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
@@ -47,11 +61,14 @@ export default function CalendarScreen() {
   const [onSiteMode, setOnSiteMode] = useState(false);//on-site toggle,resets daily
 
   const[routeModalVisible, setRouteModalVisible] = useState(false);//toggling route modal screen
-  const[routeLoading, setRouteLoading] = useState(false);//show loading state while fetching route
 
-  const[selectedRoute,setSelectedRoute] = useState<TravelDetails | null>(null);
-  const[selectedRouteTitle,setSelectedRouteTitle] = useState("");
-  //stores selected route and event title
+  //which journey the route sheet is showing, the sheet itself owns the fetching now
+  const[routeTarget, setRouteTarget] = useState<RouteSheetTarget | null>(null);
+
+  //travel mode is shared with the Travel tab through the same cached prefs
+  const[travelMode, setTravelMode] = useState<TravelMode>("TRANSIT");
+  const[transitModes, setTransitModes] = useState<TransitSubMode[]>([]);
+  const[transitRoutingPref, setTransitRoutingPref] = useState<TransitRoutingPref | null>(null);
 
   function nextWeek(){//func so user can see next week
     setWeekAnch((prev) => addDays(prev, 7));
@@ -97,6 +114,11 @@ export default function CalendarScreen() {
         //^no leave time notif if home address not set
         setDestination(prefs.UniLoc?.trim() || CityCampDest);//use destination if present but uni campus as fallback
         setOnSiteMode(await getOnSiteToday());//load todays on-site state
+
+        //travel mode comes from the backend, falling back to whatever was last used locally
+        setTravelMode(prefs.preferredMode ?? (await getCachedTravelMode()));
+        setTransitModes(prefs.transitModes ?? (await getCachedTransitModes()));
+        setTransitRoutingPref(prefs.transitRoutingPref ?? null);
     } catch{
         //default if pref loading fails
     } finally{
@@ -106,7 +128,7 @@ export default function CalendarScreen() {
     })();
   }, []);
 
-  async function openRouteDetails(item: UnifiedItem) {//activates when user taps the route detail button
+  function openRouteDetails(item: UnifiedItem) {//activates when user taps the route detail button
     if (
     item.source !== "timetable" && !(item.source === "coursework" && item.onSite)){
      return;//only timetable items and one-site cw items have routes
@@ -117,36 +139,23 @@ export default function CalendarScreen() {
       return;
     }
 
-    try {
-      setRouteLoading(true);
-      setSelectedRoute(null);
-      setSelectedRouteTitle(item.title);//store evnt title for display
-      setRouteModalVisible(true);//opens route modal screen
+    const targetDest = item.source === "coursework" ? (item.location?.trim() || destination) : destination;
 
-      const targetDest = item.source === "coursework" ? (item.location?.trim() || destination) : destination;
+    //coursework must be handed in by its deadline, a lecture you need to be at for the start
+    const deadline = item.source === "coursework" ? item.end : item.start;
 
-      const arrivalTime = item.source === "coursework" ? item.end.toISOString() : item.start.toISOString();//correct arrival time for backend
-                                                                                  //^start arrive at beginning of lecture
+    setRouteTarget({ title: item.title, origin: homeLocation, destination: targetDest, deadline });
+    setRouteModalVisible(true);//the sheet loads its own options from here
+  }
 
-       const details = await travelApi.getDetails(//func to fetch route details form backend
-        homeLocation,
-        targetDest,
-        arrivalTime
-      );
+  function handleTravelModeChange(next: TravelMode) {
+    setTravelMode(next);
+    void setCachedTravelMode(next);
+  }
 
-      if (!details) {//if no data was returned
-        setSelectedRoute(null);
-        Alert.alert("Route details unavailable", "Could not load detailed route steps");
-        return;
-      }
-
-      setSelectedRoute(details);
-    } catch (e: any) {
-      Alert.alert("Route details error", String(e?.message ?? e));
-      setRouteModalVisible(false);//closes modal screen if error
-    } finally {
-      setRouteLoading(false);
-    }
+  function handleTransitModesChange(next: TransitSubMode[]) {
+    setTransitModes(next);
+    void setCachedTransitModes(next);
   }
 
   async function loadUnifiedWeek() {
@@ -179,46 +188,18 @@ export default function CalendarScreen() {
       const onSite = await getOnSiteToday();
       setOnSiteMode(onSite);//reread in case stored day changed
 
-      const perm = await Calendar.requestCalendarPermissionsAsync();
-      if (perm.status !== "granted") {
+      setStatus("loading device calendar events...");
+
+      //shared with the travel planner so both screens resolve calendars the same way
+      const { granted, events: deviceEvents, calendars, note } = await loadEventsBetween(weekStart, weekEnd);
+
+      if (!granted) {
         Alert.alert("Calendar permission needed", "Enable calendar permission to import timetable events.");
         setStatus("calendar permission denied");
         return;
       }
 
-      setStatus("loading device calendar events...");
-      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-
-
-      //read saved calendar selection first, else fall back to all calendars
-      const savedIds = await getSelectedCalendarIds();
-      let calIds: string[];
-
-      if (savedIds && savedIds.length > 0) {
-
-        const existingIds = new Set(calendars.map((c) => c.id));
-        calIds = savedIds.filter((id) => existingIds.has(id));
-        //^keeps only saved calendars that still exist on the device
-
-        if (calIds.length === 0) {
-
-          calIds = calendars.map((c) => c.id);
-          setStatus("saved calendars unavailable, using all calendars...");//fallback if previously saved calendars were removed from device
-
-        } else {
-
-          setStatus(`using ${calIds.length} selected calendar(s)...`);
-        }
-
-      } else {
-
-        calIds = calendars.map((c) => c.id);
-        setStatus("no calendars selected — using all. Pick calendars in the Cal. Source tab.");
-        //^uses all calendars until user makes a selection in the calendar source tab
-      }
-
-      //fetch all events within the week range
-      const deviceEvents = await Calendar.getEventsAsync(calIds, weekStart, weekEnd);
+      setStatus(note);
 
       const bufferMins = currentBuffer;
       //from the backend
@@ -449,84 +430,19 @@ export default function CalendarScreen() {
                />
             </View>
           </GestureDetector>
-            <Modal
+            <RouteSheet
               visible={routeModalVisible}
-              animationType="slide"
-              presentationStyle="pageSheet"
-              onRequestClose={() => {
+              target={routeTarget}
+              onClose={() => {
                 setRouteModalVisible(false);
-                setSelectedRoute(null);
+                setRouteTarget(null);
               }}
-            >
-              <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-                <View style={s.sheetHandle} />
-                <View style={s.sheetHeader}>
-                  <Text style={s.sheetTitle}>
-                    Route details
-                  </Text>
-
-                  <Text style={s.sheetSubtitle}>
-                    {selectedRouteTitle}
-                  </Text>
-
-                  {selectedRoute?.summary ? (
-                    <Text style={[s.sheetBody, { marginTop: 12, marginBottom: 0 }]}>
-                      {selectedRoute.summary}
-                    </Text>
-                  ) : null}
-                  {selectedRoute?.durationSeconds != null ? (
-                    <Text style={{ color: colors.textMuted, marginTop: 8 }}>
-                      Total travel time: {Math.ceil(selectedRoute.durationSeconds / 60)} mins
-                    </Text>
-                  ) : null}
-                </View>
-
-                {routeLoading ? (
-                  <Text style={[s.sheetBody, s.sheetPadded]}>Loading route...</Text>
-                ) : selectedRoute ? (
-                  <ScrollView style={{ flex: 1 }} contentContainerStyle={s.stepsList}>
-                    {selectedRoute.steps.map((step, i) => (
-                      <View key={i} style={s.stepRow}>
-                        <Text style={s.stepTitle}>
-                          {i + 1}. {step.instruction}
-                        </Text>
-                        {step.durationSeconds != null ? (
-                          <Text style={{ color: colors.textMuted, marginTop: 4 }}>
-                            Duration: {Math.ceil(step.durationSeconds / 60)} mins
-                          </Text>
-                        ) : null}
-
-                        {step.lineName ? (<Text style={s.stepHighlight}>Line: {step.lineName}</Text>) : null}
-
-                        {step.vehicleType ? (<Text style={s.stepHighlight}>Vehicle: {step.vehicleType}</Text> ) : null}
-
-                        {step.departureStop ? (<Text style={s.stepHighlight}>From: {step.departureStop}</Text> ) : null}
-
-                        {step.arrivalStop ? (<Text style={s.stepHighlight}>To: {step.arrivalStop}</Text>) : null}
-
-                        {step.headSign ? (<Text style={s.stepHighlight}>Direction: {step.headSign}</Text>) : null}
-                      </View>
-                    ))}
-                  </ScrollView>
-                ) : (
-                  <Text style={[s.sheetBody, s.sheetPadded]}>
-                    No route details loaded
-                  </Text>
-                )}
-
-                <View style={s.sheetFooter}>
-                  <Pressable
-                    onPress={() => {
-                      setRouteModalVisible(false);
-                      setSelectedRoute(null);
-                    }}
-                    style={({ pressed }) => [s.closeBtn, pressed && { opacity: 0.6 }]}
-                  >
-                    <Text style={s.closeBtnText}>Close</Text>
-                  </Pressable>
-                </View>
-              </SafeAreaView>
-            </Modal>
+              mode={travelMode}
+              onModeChange={handleTravelModeChange}
+              transitModes={transitModes}
+              onTransitModesChange={handleTransitModesChange}
+              transitRoutingPref={transitRoutingPref}
+            />
     </SafeAreaView>
   );
 }
@@ -554,38 +470,6 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     marginTop: 2,
     lineHeight: 16,
   },
-  sheetHandle: {
-    alignSelf: "center",
-    width: 36,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: colors.fill,
-    marginTop: 8,
-  },
-  sheetHeader: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
-  },
-  sheetTitle: { ...Type.title3, color: colors.text },
-  sheetSubtitle: { color: colors.textSecondary, marginTop: 6 },
-  sheetBody: { color: colors.textSecondary, marginTop: 16 },
-  sheetPadded: { paddingHorizontal: Spacing.xl },
-  stepsList: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.lg },
-  stepRow: {
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
-  },
-  stepTitle: { color: colors.text, fontWeight: "600" },
-  stepHighlight: { color: colors.warning },
-  sheetFooter: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.separator,
-  },
-  closeBtn: { alignSelf: "center" },
-  closeBtnText: { color: colors.accent, fontSize: 16, fontWeight: "600" },
+  //the route sheet styles moved into components/travel/RouteSheet.tsx along with the modal
   });
 }

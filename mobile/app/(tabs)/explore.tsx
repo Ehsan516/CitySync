@@ -4,8 +4,13 @@ import {Alert, KeyboardAvoidingView, Platform, Pressable, SafeAreaView,StyleShee
 import Animated from "react-native-reanimated";
 import { getUserId, preferencesApi, accountApi, delUserId } from "@/lib/api";
 import {PrimBtn, DangerBtn} from "@/components/home/ActionBtns";
+import ModeChips from "@/components/travel/ModeChips";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import Card from "@/components/ui/Card";
+import { setCachedTransitModes, setCachedTravelMode } from "@/lib/prefs";
+import { MODE_LABELS } from "@/lib/travelFormat";
+import type { TransitRoutingPref, TransitSubMode, TravelMode } from "@/lib/types";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
 import {useAuth} from "@/hooks/useAuth";
@@ -50,6 +55,11 @@ export default function SettingsScreen() {
   );
   const [bufferMins, setBufferMins] = useState("10");
 
+  //default travel preferences, used by the Travel tab and the route sheet
+  const [preferredMode, setPreferredMode] = useState<TravelMode>("TRANSIT");
+  const [transitModes, setTransitModes] = useState<TransitSubMode[]>([]);
+  const [transitRoutingPref, setTransitRoutingPref] = useState<TransitRoutingPref | null>(null);
+
   //shows status to user like loading or ok or error
   const [status, setStatus] = useState<{ msg: string; type: "idle" | "ok" | "error" | "loading" }>({
     msg: "",
@@ -76,6 +86,10 @@ const {logout} = useAuth();
       if (data.homeAddress) setHomeAddress(data.homeAddress);
       if (data.UniLoc) setUniAddress(data.UniLoc);
       if (data.bufferMins != null) setBufferMins(String(data.bufferMins));
+
+      if (data.preferredMode) setPreferredMode(data.preferredMode);
+      if (data.transitModes) setTransitModes(data.transitModes);
+      setTransitRoutingPref(data.transitRoutingPref ?? null);
 
       setStatus({ msg: "Preferences loaded", type: "ok" });
 
@@ -109,9 +123,15 @@ const {logout} = useAuth();
         homeAddress: homeAddress.trim(),
         UniLoc: uniAddress.trim(),
         bufferMins: bufferNum,
+        preferredMode,
+        transitModes,
+        transitRoutingPref,
       });
 
       if (saved.bufferMins != null) setBufferMins(String(saved.bufferMins));
+
+      //mirror locally so the Travel tab shows the right mode before its fetch lands
+      await Promise.all([setCachedTravelMode(preferredMode), setCachedTransitModes(transitModes)]);
       setStatus({ msg: "Preferences saved ", type: "ok" });
       Alert.alert("Saved", "Your preferences have been updated reload the Calendar tab to recalculate leave times.");
     } catch (e: any) {
@@ -313,6 +333,50 @@ const {logout} = useAuth();
             <Text style={styles.hint}>
               Change this if your lectures are at different location.
             </Text>
+          </SectionCard>
+
+          {/*default transport mode and transit filters */}
+          <SectionCard title="Transport" colors={colors}>
+            <Text style={styles.sub}>
+              How you usually travel. The Travel tab and route details open with this selected.
+            </Text>
+
+            <ModeChips
+              mode={preferredMode}
+              onModeChange={setPreferredMode}
+              transitModes={transitModes}
+              onTransitModesChange={setTransitModes}
+            />
+
+            <Text style={styles.hint}>
+              {preferredMode === "TRANSIT"
+                ? transitModes.length === 0
+                  ? "No transit filter — Google will pick whatever is fastest."
+                  : `Only routing via: ${transitModes.join(", ").toLowerCase().replace(/_/g, " ")}.`
+                : `${MODE_LABELS[preferredMode]} routes don't support arrive-by planning, so CitySync works your leave time back from the journey length.`}
+            </Text>
+
+            {preferredMode === "TRANSIT" ? (
+              <>
+                <FieldLabel label="Route preference" colors={colors} />
+
+                <SegmentedControl
+                  options={["No preference", "Less walking", "Fewer changes"]}
+                  selectedIndex={
+                    transitRoutingPref === "LESS_WALKING"
+                      ? 1
+                      : transitRoutingPref === "FEWER_TRANSFERS"
+                      ? 2
+                      : 0
+                  }
+                  onChange={(i) =>
+                    setTransitRoutingPref(
+                      i === 1 ? "LESS_WALKING" : i === 2 ? "FEWER_TRANSFERS" : null
+                    )
+                  }
+                />
+              </>
+            ) : null}
           </SectionCard>
 
           {/* Buffer settings */}
