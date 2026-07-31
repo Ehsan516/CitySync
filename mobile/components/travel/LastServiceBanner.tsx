@@ -8,25 +8,17 @@ import type { RouteOption } from "@/lib/types";
 type Props = {
   lastService: RouteOption | null;
   now: number;
-  /**null while still being fetched, so we don't claim "no services" prematurely*/
   loaded: boolean;
 };
 
-//start shouting about the last train when it's this close
 const URGENT_WITHIN_MS = 90 * 60_000;
 
-/**last train home warning
- *
- * the case this exists for: it's late, you're still on campus, and you need to know whether
- * you're about to get stranded. severity escalates as the final departure approaches
- */
 export default function LastServiceBanner({ lastService, now, loaded }: Props) {
   const { colors, radius } = useTheme();
   const styles = useMemo(() => makeStyles(colors, radius), [colors, radius]);
 
   if (!loaded) return null;
 
-  //no last service found means either no transit at all today or the day is over
   if (!lastService) {
     return (
       <View style={[styles.banner, { backgroundColor: colors.dangerMuted, borderColor: colors.danger }]}>
@@ -46,7 +38,6 @@ export default function LastServiceBanner({ lastService, now, loaded }: Props) {
   const gone = msAway < -60_000;
   const urgent = !gone && msAway <= URGENT_WITHIN_MS;
 
-  //quietly stay out of the way when the last train is still hours off
   if (!gone && !urgent) return null;
 
   const tone = gone ? colors.danger : colors.warning;

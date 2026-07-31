@@ -10,13 +10,10 @@ type Props = {
   mode: TravelMode;
   onModeChange: (mode: TravelMode) => void;
 
-  //transit filters, only shown when mode is TRANSIT since they mean nothing otherwise
   transitModes: TransitSubMode[];
   onTransitModesChange: (modes: TransitSubMode[]) => void;
 };
 
-/**how do I want to travel?
- * top row is the travel mode, second row narrows which kinds of public transport count*/
 export default function ModeChips({ mode, onModeChange, transitModes, onTransitModesChange }: Props) {
   const { colors, radius } = useTheme();
   const styles = useMemo(() => makeStyles(colors, radius), [colors, radius]);
@@ -30,7 +27,6 @@ export default function ModeChips({ mode, onModeChange, transitModes, onTransitM
   function toggleTransitMode(sub: TransitSubMode) {
     Haptics.selectionAsync();
 
-    //an empty list means "no filter", which is the sensible state when nothing is selected
     if (transitModes.includes(sub)) {
       onTransitModesChange(transitModes.filter((m) => m !== sub));
     } else {

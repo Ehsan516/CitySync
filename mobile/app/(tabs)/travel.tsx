@@ -28,12 +28,6 @@ const DIRECTION_OPTIONS = ["To uni", "Back home"];
 
 type Direction = "outbound" | "return";
 
-/**the Travel tab
- *
- * the timetable screen answers "when do I leave for this lecture". this screen answers the
- * questions that aren't tied to a calendar entry: how else could I get there, what's leaving
- * right now, and how do I get home afterwards
- */
 export default function TravelScreen() {
   const { colors, radius } = useTheme();
   const s = useMemo(() => makeStyles(colors, radius), [colors, radius]);
@@ -43,7 +37,6 @@ export default function TravelScreen() {
   const [home, setHome] = useState("");
   const [uni, setUni] = useState(CityCampDest);
 
-  //editable overrides so the user can plan a one off trip without touching their saved prefs
   const [fromOverride, setFromOverride] = useState<string | null>(null);
   const [toOverride, setToOverride] = useState<string | null>(null);
 
@@ -55,10 +48,8 @@ export default function TravelScreen() {
 
   const [status, setStatus] = useState("loading preferences...");
 
-  //when the user is done on campus today, used as the default target for the trip home
   const [lastEventEnd, setLastEventEnd] = useState<Date | null>(null);
 
-  //show the cached mode instantly, then let the backend value win once it lands
   useEffect(() => {
     (async () => {
       const [cachedMode, cachedSubModes] = await Promise.all([
@@ -89,7 +80,6 @@ export default function TravelScreen() {
     }
   }, []);
 
-  //refresh on every focus, the user may have just changed their address in Settings
   useFocusEffect(
     useCallback(() => {
       void loadPrefs();
@@ -99,7 +89,7 @@ export default function TravelScreen() {
 
   function handleModeChange(next: TravelMode) {
     setMode(next);
-    void setCachedTravelMode(next);//instant on next open, backend stays the source of truth
+    void setCachedTravelMode(next);
   }
 
   function handleTransitModesChange(next: TransitSubMode[]) {
@@ -112,12 +102,9 @@ export default function TravelScreen() {
   const from = fromOverride ?? (outbound ? home : uni);
   const to = toOverride ?? (outbound ? uni : home);
 
-  /**the trip home has no fixed deadline, so there's nothing to be "late" for. on the way in
-   * we aim at the end of the last thing on today's calendar if there is one*/
   const deadline = outbound ? lastEventEnd : null;
 
   function swap() {
-    //swapping direction is the common case, so flip that rather than just the two text fields
     setDirection(outbound ? "return" : "outbound");
     setFromOverride(null);
     setToOverride(null);

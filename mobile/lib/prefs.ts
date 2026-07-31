@@ -6,8 +6,6 @@ const LEAVE_BUFFER_KEY = "citysync.leaveBufferMins.v1";
 const HOME_LOCATION_KEY = "citysync.homeLocation.v1";
 const ON_SITE_KEY = "citysync.onSiteToday.v1";
 
-//travel mode is mirrored locally purely so the travel screen can render the right chip
-//immediately on open, the backend preferences remain the source of truth
 const TRAVEL_MODE_KEY = "citysync.travelMode.v1";
 const TRANSIT_MODES_KEY = "citysync.transitModes.v1";
 
@@ -45,8 +43,6 @@ export async function setHomeLocation(value: string): Promise<void> {
   await setString(HOME_LOCATION_KEY, value.trim());
 }
 
-/**last travel mode the user picked
- * validated on read so a value from an older build can never reach the routes api*/
 export async function getCachedTravelMode(): Promise<TravelMode> {
   const raw = await getString(TRAVEL_MODE_KEY);
   return isTravelMode(raw) ? raw : "TRANSIT";

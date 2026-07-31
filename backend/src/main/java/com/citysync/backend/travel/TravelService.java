@@ -31,31 +31,22 @@ public class TravelService {
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    //uk timezone, used for working out "last service today"
     private static final ZoneId LOCAL_ZONE = ZoneId.of("Europe/London");
 
-    //what the frontend is allowed to ask for, anything else is rejected before we spend an api call
     static final Set<String> TRAVEL_MODES = Set.of("TRANSIT", "DRIVE", "WALK", "BICYCLE", "TWO_WHEELER");
     static final Set<String> TRANSIT_SUB_MODES = Set.of("BUS", "SUBWAY", "TRAIN", "LIGHT_RAIL", "RAIL");
     static final Set<String> TRANSIT_ROUTING_PREFS = Set.of("LESS_WALKING", "FEWER_TRANSFERS");
 
-    //routes api only accepts routingPreference for these two, anything else is a hard 400 from google
     private static final Set<String> ROUTING_PREF_MODES = Set.of("DRIVE", "TWO_WHEELER");
 
-    //google makes us warn users that these modes are still beta
     private static final Set<String> BETA_MODES = Set.of("WALK", "BICYCLE", "TWO_WHEELER");
 
-    /**the timetable screen fires one routes call per calendar event, so without this the api bill
-     * scales with how much the user scrolls. deliberately shorter than the app's 60s auto refresh
-     * so a "leave now" refresh always gets genuinely fresh times rather than a cached board*/
     private static final long PLAN_CACHE_TTL_MILLIS = 30_000;
 
     private record CacheEntry(TravelPlanDto plan, long storedAt) {}
 
     private final Map<String, CacheEntry> planCache = new ConcurrentHashMap<>();
 
-    /**last service only changes once a day so it's cached per route per local date
-     * wrapper record because a null option (no service found) is a real answer worth caching*/
     private record LastServiceResult(RouteOptionDto option) {}
 
     private final Map<String, LastServiceResult> lastServiceCache = new ConcurrentHashMap<>();
@@ -128,15 +119,13 @@ public class TravelService {
         }
     }
 
-    /**legacy single route endpoint, now just the first option of a full plan so there is
-     * only one copy of the request building and parsing code to maintain*/
     public travelDeets getTravelDetails(String origin, String destination, String arrivalTime) {
 
         TravelPlanDto plan = getPlan(
                 origin, destination, "TRANSIT",
                 null, arrivalTime,
                 null, null,
-                false //no alternatives needed, the old ui only ever showed one
+                false
         );
 
         if (plan.fallback() || plan.options().isEmpty()) {
@@ -147,16 +136,6 @@ public class TravelService {
         return new travelDeets(false, best.durationSeconds(), best.summary(), best.steps());
     }
 
-    /**the main journey planner
-     * one call returns up to 4 options (google gives 1 preferred + 3 alternatives) which is
-     * what lets the app show a departure board rather than a single take-it-or-leave-it route
-     *
-     * @param mode one of TRAVEL_MODES
-     * @param departureTime rfc3339, mutually exclusive with arrivalTime, null means "now"
-     * @param arrivalTime rfc3339 arrive-by target, only honoured by google for TRANSIT
-     * @param transitModesCsv optional filter eg "TRAIN,SUBWAY"
-     * @param transitRoutingPref LESS_WALKING or FEWER_TRANSFERS
-     */
     public TravelPlanDto getPlan(
             String origin,
             String destination,
@@ -170,7 +149,6 @@ public class TravelService {
         String travelMode = normaliseMode(mode);
         boolean isTransit = "TRANSIT".equals(travelMode);
 
-        //transit-only knobs are dropped for other modes so they don't pollute the cache key
         List<String> subModes = isTransit ? parseTransitModes(transitModesCsv) : List.of();
         String routingPref = isTransit ? normaliseTransitRoutingPref(transitRoutingPref) : null;
 
@@ -183,7 +161,7 @@ public class TravelService {
 
         CacheEntry cached = planCache.get(cacheKey);
         if (cached != null && (System.currentTimeMillis() - cached.storedAt()) < PLAN_CACHE_TTL_MILLIS) {
-            return cached.plan();//computedAt inside stays the real calculation time so "updated Xs ago" is honest
+            return cached.plan();
         }
 
         TravelPlanDto plan = callComputeRoutes(
@@ -192,7 +170,6 @@ public class TravelService {
                 subModes, routingPref, alternatives
         );
 
-        //never cache a failure, the next pull-to-refresh should genuinely retry
         if (!plan.fallback()) {
             planCache.put(cacheKey, new CacheEntry(plan, System.currentTimeMillis()));
         }
@@ -200,15 +177,6 @@ public class TravelService {
         return plan;
     }
 
-    /**finds the last service of the day that still gets the user home
-     *
-     * google only ever answers "what leaves after time X", so finding the *last* departure means
-     * probing. we start late and walk backwards until we land on a departure that is still today,
-     * then creep forwards to make sure nothing later was missed. capped at MAX_PROBES api calls
-     * and then cached for the rest of the day per route.
-     *
-     * returns null when there is no service left today (or the mode has no timetable)
-     */
     public RouteOptionDto getLastService(
             String origin,
             String destination,
@@ -218,7 +186,6 @@ public class TravelService {
     ) {
         String travelMode = normaliseMode(mode);
 
-        //only public transport actually stops running, you can always walk or drive home
         if (!"TRANSIT".equals(travelMode)) return null;
 
         LocalDate today = LocalDate.now(LOCAL_ZONE);
@@ -237,7 +204,6 @@ public class TravelService {
 
         RouteOptionDto best = null;
 
-        //coarse pass, walk backwards through the late evening looking for a departure still on today
         for (int hour : new int[]{23, 22, 21}) {
             if (probes >= MAX_PROBES) break;
             probes++;
@@ -253,7 +219,6 @@ public class TravelService {
             }
         }
 
-        //refine forwards, a probe at 22:30 can return 22:52 while a 23:10 service also exists
         while (best != null && probes < MAX_PROBES) {
             probes++;
 
@@ -263,7 +228,7 @@ public class TravelService {
             );
 
             if (!isOnDate(later, today)) break;
-            if (!later.departureTime().isAfter(best.departureTime())) break;//no progress, stop
+            if (!later.departureTime().isAfter(best.departureTime())) break;
 
             best = later;
         }
@@ -272,7 +237,6 @@ public class TravelService {
         return best;
     }
 
-    //single probe, returns the soonest option departing at/after the given instant
     private RouteOptionDto probeDeparture(
             String origin, String destination, String travelMode,
             List<String> subModes, String routingPref, Instant departAfter
@@ -292,7 +256,6 @@ public class TravelService {
         return option.departureTime().atZone(LOCAL_ZONE).toLocalDate().equals(date);
     }
 
-    //shared request build + parse for every computeRoutes caller
     private TravelPlanDto callComputeRoutes(
             String origin,
             String destination,
@@ -324,9 +287,6 @@ public class TravelService {
             if (isTransit) {
                 requestBody.put("arrivalTime", arrivalTime);
             } else {
-                /*google ignores arrivalTime for every mode except transit, so rather than send a
-                 field that silently does nothing we ask for the journey length and let the app
-                 subtract it from the deadline. one call instead of a probe-then-refine pair*/
                 notice = "Google can't plan arrive-by journeys for " + friendlyMode(travelMode)
                         + ", so this shows how long the trip takes and CitySync works your leave time back from it.";
             }
@@ -334,9 +294,6 @@ public class TravelService {
             requestedTime = parseInstant(departureTime);
             requestBody.put("departureTime", departureTime);
         }
-        //neither set means google defaults departureTime to now, which is what "leave now" wants
-
-        //routingPreference is only legal for DRIVE and TWO_WHEELER, sending it elsewhere fails the request
         if (ROUTING_PREF_MODES.contains(travelMode)) {
             requestBody.put("routingPreference", "TRAFFIC_AWARE");
         }
@@ -358,7 +315,7 @@ public class TravelService {
                 "routes.legs.steps.travelMode",
                 "routes.legs.steps.staticDuration",
                 "routes.legs.steps.navigationInstruction.instructions",//walk insturction
-                "routes.legs.steps.transitDetails"//whole block, gives stops, times, line and agency
+                "routes.legs.steps.transitDetails"
         );
 
         try {
@@ -381,7 +338,6 @@ public class TravelService {
                 return TravelPlanDto.failed(travelMode, arriveBy, requestedTime, "No route found for this journey.");
             }
 
-            //modes with no timetable need an anchor to report departure/arrival against
             Instant defaultStart = (!arriveBy && requestedTime != null) ? requestedTime : Instant.now();
 
             List<RouteOptionDto> options = new ArrayList<>();
@@ -395,7 +351,6 @@ public class TravelService {
                 return TravelPlanDto.failed(travelMode, arriveBy, requestedTime, "No usable route found.");
             }
 
-            //soonest departure first so the list reads like a departure board
             options.sort((a, b) -> {
                 if (a.departureTime() == null || b.departureTime() == null) return 0;
                 return a.departureTime().compareTo(b.departureTime());
@@ -414,13 +369,6 @@ public class TravelService {
         }
     }
 
-    /**turns one google route into an option the ui can render
-     *
-     * @param defaultStart anchor for modes with no timetable to report times against
-     * @param arriveBy whether this was an arrive-by request
-     * @param requestedTime the arrive-by deadline, used to work departure time backwards when
-     *                      google gave us no transit times to hang the journey off
-     */
     private RouteOptionDto parseRoute(
             JsonNode route, int index, Instant defaultStart, boolean arriveBy, Instant requestedTime
     ) {
@@ -442,7 +390,6 @@ public class TravelService {
         int walkingSeconds = 0;
         int transitStepCount = 0;
 
-        //leading/trailing walk let us convert transit times into real door-to-door times
         int leadingWalkSeconds = 0;
         int trailingWalkSeconds = 0;
 
@@ -461,7 +408,7 @@ public class TravelService {
                 }
                 if (step.arrivalTime() != null) {
                     lastTransitArrival = step.arrivalTime();
-                    trailingWalkSeconds = 0;//walking counted so far was between trains, not at the end
+                    trailingWalkSeconds = 0;
                 }
             } else {
                 walkingSeconds += stepSeconds;
@@ -478,22 +425,16 @@ public class TravelService {
         Instant arrivalTime;
 
         if (firstTransitDeparture != null) {
-            //user has to leave early enough to walk to the stop
             departureTime = firstTransitDeparture.minusSeconds(leadingWalkSeconds);
             arrivalTime = lastTransitArrival != null
                     ? lastTransitArrival.plusSeconds(trailingWalkSeconds)
                     : (totalSecs != null ? departureTime.plusSeconds(totalSecs) : null);
 
         } else if (arriveBy && requestedTime != null && totalSecs != null) {
-            /*no timetable to hang this off, either a walk/drive/cycle route or transit with no
-              times back from google. an arrive-by request means the deadline IS the arrival, so
-              work the departure backwards from it. this is what makes the "CitySync works your
-              leave time back from it" notice actually true rather than reporting "leave now"*/
             arrivalTime = requestedTime;
             departureTime = requestedTime.minusSeconds(totalSecs);
 
         } else {
-            //leaving now, so the journey starts whenever the user starts
             departureTime = defaultStart;
             arrivalTime = totalSecs != null ? defaultStart.plusSeconds(totalSecs) : null;
         }
@@ -504,7 +445,7 @@ public class TravelService {
                 buildSummary(steps),
                 departureTime,
                 arrivalTime,
-                Math.max(0, transitStepCount - 1),//changes, not number of trains
+                Math.max(0, transitStepCount - 1),
                 walkingSeconds,
                 steps
         );
@@ -525,8 +466,6 @@ public class TravelService {
         String departure = text(stopDetails.path("departureStop").path("name"));
         String arrival = text(stopDetails.path("arrivalStop").path("name"));
 
-        /*times sit under stopDetails in the api reference but have moved between revisions,
-          so check the parent too rather than silently losing the whole departure board*/
         Instant departureTime = firstInstant(
                 stopDetails.path("departureTime"), transit.path("departureTime"));
         Instant arrivalTime = firstInstant(
@@ -536,7 +475,6 @@ public class TravelService {
 
         JsonNode line = transit.path("transitLine");
 
-        //prefer the short name, "Northern" reads better than "Northern Line" on a small badge
         String lineName = text(line.path("nameShort"));
         if (lineName == null) lineName = text(line.path("name"));
 
@@ -564,10 +502,6 @@ public class TravelService {
         );
     }
 
-    /* ---- input normalising, done before any api call so bad input never costs us a request ----
-       public because the preferences layer validates saved travel settings with the same rules,
-       that way what we persist can never drift from what the routes api will accept */
-
     public static String normaliseMode(String mode) {
         if (mode == null || mode.isBlank()) return "TRANSIT";
         String upper = mode.trim().toUpperCase();
@@ -577,7 +511,6 @@ public class TravelService {
     public static List<String> parseTransitModes(String csv) {
         if (csv == null || csv.isBlank()) return List.of();
 
-        //linked set keeps the users order and drops duplicates
         Set<String> out = new LinkedHashSet<>();
 
         for (String raw : csv.split(",")) {
@@ -615,7 +548,6 @@ public class TravelService {
             return Instant.parse(value);
         } catch (Exception e) {
             try {
-                //tolerate offsets like 2026-07-30T09:00:00+01:00
                 return ZonedDateTime.parse(value).toInstant();
             } catch (Exception ignored) {
                 return null;
@@ -623,7 +555,6 @@ public class TravelService {
         }
     }
 
-    //first of the given nodes that parses into a real timestamp
     private Instant firstInstant(JsonNode... candidates) {
         for (JsonNode node : candidates) {
             String raw = text(node);

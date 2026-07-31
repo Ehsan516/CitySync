@@ -12,12 +12,10 @@ public record routeStepDto ( //shows a step in a journey like train or walk
     String vehicleType,//train bus
     String headSign, //direction like "Farringdon"
 
-    //the clock times are what make the live departure board possible, without these
-    //the app can only say "38 mins" and not "the 14:02 train"
-    Instant departureTime,//when this leg actually leaves
-    Instant arrivalTime,//when this leg actually arrives
-    Integer stopCount,//how many stops youre on for
-    String lineColor,//line brand colour so ui can tint the badge
-    String lineTextColor,//readable text colour on top of lineColor
-    String agencyName //eg thameslink, tfl
+    Instant departureTime,
+    Instant arrivalTime,
+    Integer stopCount,
+    String lineColor,
+    String lineTextColor,
+    String agencyName
 ){}

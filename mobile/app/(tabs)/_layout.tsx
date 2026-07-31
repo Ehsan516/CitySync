@@ -38,12 +38,6 @@ export default function TabLayout() {
               overflow: 'hidden',
               elevation: 0,
 
-              /* react-navigation puts paddingBottom: insets.bottom on the tab bar container and
-                 merges this style over the top. our fixed height doesn't clear that padding, so
-                 the buttons only got (height - insets.bottom) of space and overflow:hidden
-                 clipped them away, leaving the bar visible but untappable.
-                 the floating bar already sits above the inset via `bottom` above, so zero it out.
-                 keep these, they are what makes the glass tab bar respond to taps at all */
               paddingBottom: 0,
               paddingTop: 0,
               paddingHorizontal: 0,
@@ -88,7 +82,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/*journey planner, live departures and the trip home */}
       <Tabs.Screen
         name="travel"
         options={{

@@ -55,7 +55,6 @@ export default function SettingsScreen() {
   );
   const [bufferMins, setBufferMins] = useState("10");
 
-  //default travel preferences, used by the Travel tab and the route sheet
   const [preferredMode, setPreferredMode] = useState<TravelMode>("TRANSIT");
   const [transitModes, setTransitModes] = useState<TransitSubMode[]>([]);
   const [transitRoutingPref, setTransitRoutingPref] = useState<TransitRoutingPref | null>(null);
@@ -130,7 +129,6 @@ const {logout} = useAuth();
 
       if (saved.bufferMins != null) setBufferMins(String(saved.bufferMins));
 
-      //mirror locally so the Travel tab shows the right mode before its fetch lands
       await Promise.all([setCachedTravelMode(preferredMode), setCachedTransitModes(transitModes)]);
       setStatus({ msg: "Preferences saved ", type: "ok" });
       Alert.alert("Saved", "Your preferences have been updated reload the Calendar tab to recalculate leave times.");
@@ -335,7 +333,6 @@ const {logout} = useAuth();
             </Text>
           </SectionCard>
 
-          {/*default transport mode and transit filters */}
           <SectionCard title="Transport" colors={colors}>
             <Text style={styles.sub}>
               How you usually travel. The Travel tab and route details open with this selected.

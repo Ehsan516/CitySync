@@ -82,8 +82,6 @@ async function requestJson<T>(path: string, options: RequestInit = {}): Promise<
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
-/**builds a query string, skipping anything null/undefined/blank
- * both endpoints get trimmed and encoded, the old hand rolled version only trimmed origin*/
 function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
   const parts: string[] = [];
 
@@ -174,7 +172,6 @@ export const preferencesApi = {
       UniLoc: string;
       bufferMins: number;
 
-      //travel prefs, optional so existing callers don't have to pass them
       preferredMode?: TravelMode;
       transitModes?: TransitSubMode[];
       transitRoutingPref?: TransitRoutingPref | null;
@@ -221,11 +218,6 @@ export const travelApi = {
     }
   },
 
-  /**full journey plan with several options, this is what the departure board renders
-   *
-   * unlike the older helpers this throws instead of swallowing errors, the travel screen needs
-   * to tell the user "couldn't refresh" rather than silently showing a stale board
-   */
   getPlan(query: TravelPlanQuery, signal?: AbortSignal): Promise<TravelPlan> {
     const qs = buildQuery({
       origin: query.origin,
@@ -241,8 +233,6 @@ export const travelApi = {
     return requestJson<TravelPlan>(`/travel/plan${qs}`, { signal });
   },
 
-  /**last service of the day that still gets the user home
-   * backend answers 204 when nothing is left, which requestJson surfaces as undefined*/
   async getLastService(
     origin: string,
     destination: string,
@@ -263,7 +253,6 @@ export const travelApi = {
       const json = await requestJson<RouteOption | undefined>(`/travel/last-service${qs}`, { signal });
       return json ?? null;
     } catch {
-      //a missing last-service is never worth blocking the screen over
       return null;
     }
   },

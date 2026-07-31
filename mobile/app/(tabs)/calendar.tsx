@@ -62,10 +62,8 @@ export default function CalendarScreen() {
 
   const[routeModalVisible, setRouteModalVisible] = useState(false);//toggling route modal screen
 
-  //which journey the route sheet is showing, the sheet itself owns the fetching now
   const[routeTarget, setRouteTarget] = useState<RouteSheetTarget | null>(null);
 
-  //travel mode is shared with the Travel tab through the same cached prefs
   const[travelMode, setTravelMode] = useState<TravelMode>("TRANSIT");
   const[transitModes, setTransitModes] = useState<TransitSubMode[]>([]);
   const[transitRoutingPref, setTransitRoutingPref] = useState<TransitRoutingPref | null>(null);
@@ -115,7 +113,6 @@ export default function CalendarScreen() {
         setDestination(prefs.UniLoc?.trim() || CityCampDest);//use destination if present but uni campus as fallback
         setOnSiteMode(await getOnSiteToday());//load todays on-site state
 
-        //travel mode comes from the backend, falling back to whatever was last used locally
         setTravelMode(prefs.preferredMode ?? (await getCachedTravelMode()));
         setTransitModes(prefs.transitModes ?? (await getCachedTransitModes()));
         setTransitRoutingPref(prefs.transitRoutingPref ?? null);
@@ -141,11 +138,10 @@ export default function CalendarScreen() {
 
     const targetDest = item.source === "coursework" ? (item.location?.trim() || destination) : destination;
 
-    //coursework must be handed in by its deadline, a lecture you need to be at for the start
     const deadline = item.source === "coursework" ? item.end : item.start;
 
     setRouteTarget({ title: item.title, origin: homeLocation, destination: targetDest, deadline });
-    setRouteModalVisible(true);//the sheet loads its own options from here
+    setRouteModalVisible(true);
   }
 
   function handleTravelModeChange(next: TravelMode) {
@@ -190,7 +186,6 @@ export default function CalendarScreen() {
 
       setStatus("loading device calendar events...");
 
-      //shared with the travel planner so both screens resolve calendars the same way
       const { granted, events: deviceEvents, calendars, note } = await loadEventsBetween(weekStart, weekEnd);
 
       if (!granted) {
@@ -470,6 +465,5 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     marginTop: 2,
     lineHeight: 16,
   },
-  //the route sheet styles moved into components/travel/RouteSheet.tsx along with the modal
   });
 }

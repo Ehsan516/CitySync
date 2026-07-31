@@ -9,9 +9,6 @@ type Props = {
   steps: RouteStepDto[];
 };
 
-/**step by step breakdown of one journey
- * lifted out of the timetable route modal so the travel tab and the sheet render steps
- * identically instead of drifting apart*/
 export default function RouteStepList({ steps }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -25,7 +22,6 @@ export default function RouteStepList({ steps }: Props) {
       {steps.map((step, i) => {
         const isTransit = step.mode?.toUpperCase() === "TRANSIT";
 
-        //google gives brand colours as hex, use them for the line badge when present
         const badgeBg = step.lineColor ?? colors.fillSecondary;
         const badgeFg = step.lineTextColor ?? colors.text;
 

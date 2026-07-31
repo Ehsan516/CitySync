@@ -25,21 +25,17 @@ public class UserPref {
     @Column(name = "buffer_minutes", nullable = false)
     private int bufferMins = 0;//travel buffer
 
-    /*these are deliberately not marked nullable=false. ddl-auto=update would emit
-      "ALTER TABLE ADD COLUMN ... NOT NULL" which postgres rejects on a table that already has
-      rows. the field initialisers below mean jpa never actually writes a null, and
-      db/migration_travel_prefs.sql adds the real constraints for existing databases*/
     @Column(name = "preferred_mode")
-    private String preferredMode = "TRANSIT";//default way the user travels
+    private String preferredMode = "TRANSIT";
 
     @Column(name = "transit_modes")
-    private String transitModes;//csv filter eg "TRAIN,SUBWAY", null means let google decide
+    private String transitModes;
 
     @Column(name = "transit_routing_pref")
-    private String transitRoutingPref;//LESS_WALKING or FEWER_TRANSFERS
+    private String transitRoutingPref;
 
     @Column(name = "return_buffer_minutes")
-    private int returnBufferMins = 0;//separate buffer for the trip home, usually less of a rush
+    private int returnBufferMins = 0;
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;//time when it was changed
@@ -73,16 +69,16 @@ public class UserPref {
     public int getBufferMins() { return bufferMins; }//the leave buffer in mins
     public void setBufferMins(int bufferMins) { this.bufferMins = bufferMins; }
 
-    public String getPreferredMode() { return preferredMode; }//default travel mode
+    public String getPreferredMode() { return preferredMode; }
     public void setPreferredMode(String preferredMode) { this.preferredMode = preferredMode; }
 
-    public String getTransitModes() { return transitModes; }//csv of allowed transit types
+    public String getTransitModes() { return transitModes; }
     public void setTransitModes(String transitModes) { this.transitModes = transitModes; }
 
-    public String getTransitRoutingPref() { return transitRoutingPref; }//less walking vs fewer changes
+    public String getTransitRoutingPref() { return transitRoutingPref; }
     public void setTransitRoutingPref(String transitRoutingPref) { this.transitRoutingPref = transitRoutingPref; }
 
-    public int getReturnBufferMins() { return returnBufferMins; }//buffer for the journey home
+    public int getReturnBufferMins() { return returnBufferMins; }
     public void setReturnBufferMins(int returnBufferMins) { this.returnBufferMins = returnBufferMins; }
 
 //    public Instant getUpdatedAt() { return updatedAt; } //jut for debug

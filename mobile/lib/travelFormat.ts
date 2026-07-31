@@ -1,8 +1,5 @@
 import type { RouteOption, TransitSubMode, TravelMode } from "@/lib/types";
 
-/**formatting and verdict helpers shared by the travel tab and the route sheet
- * kept out of the components so the "will I make it" rule is defined in exactly one place*/
-
 export const MODE_LABELS: Record<TravelMode, string> = {
   TRANSIT: "Transit",
   DRIVE: "Drive",
@@ -19,7 +16,6 @@ export const TRANSIT_SUB_MODE_LABELS: Record<TransitSubMode, string> = {
   RAIL: "All rail",
 };
 
-//google's vehicle type enum is shouty, this makes it readable in the step list
 const VEHICLE_LABELS: Record<string, string> = {
   BUS: "Bus",
   RAIL: "Train",
@@ -47,11 +43,10 @@ export function vehicleLabel(vehicleType: string | null): string | null {
   return VEHICLE_LABELS[vehicleType.toUpperCase()] ?? vehicleType;
 }
 
-//"1h 24m" / "38 min", used for journey lengths
 export function formatDuration(seconds: number | null | undefined): string {
   if (seconds == null || seconds < 0) return "—";
 
-  const totalMins = Math.max(1, Math.round(seconds / 60));//never show "0 min" for a real journey
+  const totalMins = Math.max(1, Math.round(seconds / 60));
 
   if (totalMins < 60) return `${totalMins} min`;
 
@@ -61,7 +56,6 @@ export function formatDuration(seconds: number | null | undefined): string {
   return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`;
 }
 
-//clock time like "14:02"
 export function formatClock(iso: string | null | undefined): string {
   if (!iso) return "—";
 
@@ -78,8 +72,6 @@ export function parseIso(iso: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/**countdown to a departure, relative to a ticking now
- * returns null when there's nothing sensible to show*/
 export function formatCountdown(iso: string | null | undefined, now: number): string | null {
   const target = parseIso(iso);
   if (!target) return null;
@@ -102,25 +94,18 @@ export function hasDeparted(option: RouteOption, now: number): boolean {
   const dep = parseIso(option.departureTime);
   if (!dep) return false;
 
-  //a minute of slack, a train you're technically 30s late for is still worth showing
   return dep.getTime() < now - 60_000;
 }
 
 export type ArrivalVerdict =
-  | { kind: "none" }//no deadline to judge against
-  | { kind: "unknown" }//we have a deadline but google didn't give us an arrival time
+  | { kind: "none" }
+  | { kind: "unknown" }
   | { kind: "onTime"; sparesMins: number }
   | { kind: "tight"; sparesMins: number }
   | { kind: "late"; lateMins: number };
 
-//under this much slack and it's worth warning the user it'll be tight
 const TIGHT_THRESHOLD_MINS = 10;
 
-/**does this option actually get the user there in time?
- *
- * this is the answer to "I missed my train, am I still ok" and it's why arrivalTime is
- * plumbed all the way through from the routes api
- */
 export function arrivalVerdict(option: RouteOption, deadline: Date | null): ArrivalVerdict {
   if (!deadline) return { kind: "none" };
 
@@ -149,7 +134,6 @@ export function verdictLabel(verdict: ArrivalVerdict): string | null {
   }
 }
 
-//"2 changes" / "direct"
 export function formatTransfers(transferCount: number | null | undefined): string | null {
   if (transferCount == null) return null;
   if (transferCount <= 0) return "direct";
@@ -157,9 +141,6 @@ export function formatTransfers(transferCount: number | null | undefined): strin
   return transferCount === 1 ? "1 change" : `${transferCount} changes`;
 }
 
-/**picks the option to recommend, the first one that still arrives in time
- * falls back to the soonest arrival when nothing makes it, which is the least bad option
- * for someone who has already missed their train*/
 export function recommendedOptionIndex(
   options: RouteOption[],
   deadline: Date | null,
@@ -182,7 +163,6 @@ export function recommendedOptionIndex(
 
   if (inTime) return inTime.index;
 
-  //nothing arrives in time, so recommend whichever gets there soonest
   const soonest = [...pool].sort((a, b) => {
     const aTime = parseIso(a.option.arrivalTime)?.getTime() ?? Infinity;
     const bTime = parseIso(b.option.arrivalTime)?.getTime() ?? Infinity;
@@ -192,7 +172,6 @@ export function recommendedOptionIndex(
   return soonest.index;
 }
 
-//"updated 12s ago", tells the user how live the board actually is
 export function formatStaleness(computedAt: Date | null, now: number): string {
   if (!computedAt) return "not loaded";
 

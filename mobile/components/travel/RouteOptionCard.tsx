@@ -16,17 +16,13 @@ import type { RouteOption } from "@/lib/types";
 
 type Props = {
   option: RouteOption;
-  /**the moment the user needs to have arrived by, drives the on time/late badge.
-   * null when planning a trip with no deadline, eg heading home*/
   deadline: Date | null;
-  now: number;//ticking clock from useNow, keeps countdowns live without api calls
+  now: number;
   recommended: boolean;
   expanded: boolean;
   onToggle: () => void;
 };
 
-/**one row of the departure board
- * collapsed it answers "when does it go and will I make it", expanded it shows every step*/
 export default function RouteOptionCard({
   option,
   deadline,
@@ -46,7 +42,6 @@ export default function RouteOptionCard({
   const verdictColor =
     verdict.kind === "late" ? colors.danger : verdict.kind === "tight" ? colors.warning : colors.success;
 
-  //the first transit leg is what the user is actually trying to catch
   const firstTransit = option.steps.find((s) => s.mode?.toUpperCase() === "TRANSIT");
 
   const subtitleParts = [

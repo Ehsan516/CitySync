@@ -45,8 +45,6 @@ public class UserPrefService {
             throw new IllegalArgumentException("returnBufferMins must be between 0 and 300");
         }
 
-        /*reusing the travel layer validators so the allowed modes can never drift from what the
-          routes api will actually accept, an unknown value falls back to a safe default*/
         String preferredMode = TravelService.normaliseMode(dto.preferredMode());
         List<String> transitModes = TravelService.parseTransitModes(joinCsv(dto.transitModes()));
         String routingPref = TravelService.normaliseTransitRoutingPref(dto.transitRoutingPref());
@@ -72,7 +70,6 @@ public class UserPrefService {
         return toDto(saved);//returns saved vals bacl
     }
 
-    //single place the entity turns into a dto so get and upsert can never disagree
     private static UserPrefDto toDto(UserPref p) {
         return new UserPrefDto(
                 p.getHomeAddress(),
@@ -85,7 +82,6 @@ public class UserPrefService {
         );
     }
 
-    //db stores csv, the app works with a list
     private static List<String> splitCsv(String csv) {
         if (csv == null || csv.isBlank()) return List.of();
         return List.of(csv.split(","));

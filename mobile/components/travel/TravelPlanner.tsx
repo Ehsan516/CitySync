@@ -30,8 +30,6 @@ type Props = {
   origin: string;
   destination: string;
 
-  /**hard deadline to judge arrivals against, eg a lecture start time.
-   * null for open ended trips like heading home*/
   deadline: Date | null;
 
   mode: TravelMode;
@@ -44,18 +42,11 @@ type Props = {
 
   initialTiming?: Timing;
 
-  /**show the last-train-home warning, worth it for the trip home but noise on the way in*/
   showLastService?: boolean;
 
-  //rendered between the controls and the board, used by the tab for its from/to editor
   headerSlot?: React.ReactNode;
 };
 
-/**the shared journey planner
- *
- * used by both the Travel tab and the route sheet opened from a timetable item, so the two
- * can never drift apart on how modes, live refresh or the missed-connection flow behave
- */
 export default function TravelPlanner({
   origin,
   destination,
@@ -72,7 +63,6 @@ export default function TravelPlanner({
   const { colors, radius } = useTheme();
   const s = useMemo(() => makeStyles(colors, radius), [colors, radius]);
 
-  //a deadline is the only thing that makes "arrive by" meaningful
   const [timing, setTiming] = useState<Timing>(deadline ? initialTiming : "leaveNow");
 
   const [arriveByAt, setArriveByAt] = useState<Date>(() => deadline ?? new Date());
@@ -80,15 +70,12 @@ export default function TravelPlanner({
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  /*callers rebuild the deadline Date on every render, so compare by timestamp and hand the rest
-    of the component a referentially stable date, otherwise every render looks like a new query*/
   const deadlineMs = deadline ? deadline.getTime() : null;
   const stableDeadline = useMemo(
     () => (deadlineMs != null ? new Date(deadlineMs) : null),
     [deadlineMs]
   );
 
-  //keep the arrive-by target in step when the caller swaps to a different event
   useEffect(() => {
     if (stableDeadline) setArriveByAt(stableDeadline);
   }, [stableDeadline]);
@@ -102,7 +89,6 @@ export default function TravelPlanner({
       origin: origin.trim(),
       destination: destination.trim(),
       mode,
-      //omitting both times makes the backend plan from "now", which is what leave-now wants
       arrivalTime: timing === "arriveBy" ? arriveByAt.toISOString() : null,
       departureTime: null,
       transitModes,
@@ -113,7 +99,6 @@ export default function TravelPlanner({
 
   const { plan, loading, refreshing, error, computedAt, refresh } = useTravelPlan(query);
 
-  //collapse any expanded row when the underlying options change out from under it
   const planKey = plan?.computedAt ?? null;
   const lastPlanKey = useRef<string | null>(null);
   useEffect(() => {
@@ -123,7 +108,6 @@ export default function TravelPlanner({
     }
   }, [planKey]);
 
-  // ---- last train home ----
   const [lastService, setLastService] = useState<RouteOption | null>(null);
   const [lastServiceLoaded, setLastServiceLoaded] = useState(false);
 
@@ -157,10 +141,8 @@ export default function TravelPlanner({
     };
   }, [showLastService, mode, origin, destination, transitModes, transitRoutingPref]);
 
-  //memoised so the `?? []` fallback doesn't hand a brand new array to the hooks below each render
   const options = useMemo(() => plan?.options ?? [], [plan]);
 
-  //when arriving by a set time the target itself is the deadline, otherwise use the event's
   const effectiveDeadline = useMemo(
     () => stableDeadline ?? (timing === "arriveBy" ? arriveByAt : null),
     [stableDeadline, timing, arriveByAt]
@@ -171,7 +153,6 @@ export default function TravelPlanner({
     [options, effectiveDeadline, now]
   );
 
-  //does anything on the board actually get them there in time?
   const anyOnTime = useMemo(() => {
     if (!effectiveDeadline) return true;
 
@@ -185,7 +166,6 @@ export default function TravelPlanner({
   const lateVerdict = recommended ? arrivalVerdict(recommended, effectiveDeadline) : { kind: "none" as const };
 
   function onPickTime(event: DateTimePickerEvent, selected?: Date) {
-    //android fires the dialog dismissal through the same callback
     if (Platform.OS === "android") setShowPicker(false);
 
     if (event.type === "dismissed" || !selected) return;
@@ -193,8 +173,6 @@ export default function TravelPlanner({
     setArriveByAt(selected);
   }
 
-  /**missed the train? replan from right now
-   * switching to leave-now changes the query, which the hook picks up and refetches*/
   function handleMissedIt() {
     if (timing === "leaveNow") refresh();
     else setTiming("leaveNow");
@@ -249,7 +227,6 @@ export default function TravelPlanner({
         <LastServiceBanner lastService={lastService} now={now} loaded={lastServiceLoaded} />
       ) : null}
 
-      {/*the missed-connection case, only worth shouting about when nothing gets them there*/}
       {!loading && options.length > 0 && !anyOnTime && effectiveDeadline ? (
         <View style={[s.banner, { backgroundColor: colors.dangerMuted, borderColor: colors.danger }]}>
           <Text style={[s.bannerTitle, { color: colors.danger }]}>

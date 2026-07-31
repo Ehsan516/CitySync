@@ -7,10 +7,9 @@ import { useTheme } from "@/contexts/ThemeContext";
 import type { TransitRoutingPref, TransitSubMode, TravelMode } from "@/lib/types";
 
 export type RouteSheetTarget = {
-  title: string;//the event this journey is for
+  title: string;
   origin: string;
   destination: string;
-  /**when the user needs to be there, the arrive-by target and the on time/late yardstick*/
   deadline: Date | null;
 };
 
@@ -28,12 +27,6 @@ type Props = {
   transitRoutingPref?: TransitRoutingPref | null;
 };
 
-/**route details for one calendar item
- *
- * replaces the old single-route modal that lived inside the timetable screen. it now hosts the
- * full planner, so the same mode picker, live refresh and missed-connection flow are available
- * straight from a lecture rather than only in the Travel tab
- */
 export default function RouteSheet({
   visible,
   target,

@@ -11,11 +11,8 @@ type Props = {
   onRefresh: () => void;
 };
 
-//anything older than this and the "live" claim stops being honest
 const STALE_AFTER_MS = 120_000;
 
-/**tells the user how fresh the board is and lets them force a refresh
- * the dot goes amber once the data is old enough that it might not reflect reality*/
 export default function LiveStamp({ computedAt, now, refreshing, onRefresh }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
