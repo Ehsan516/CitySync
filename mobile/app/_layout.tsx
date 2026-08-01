@@ -1,4 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -9,7 +17,6 @@ import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import LoginScreen from '@/components/LoginScreen';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
-
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -53,11 +60,19 @@ function AppGate() {
 }
 
   export default function RootLayout() {//making auth global by wrapping on app
+    const [fontsLoaded] = useFonts({
+      PlusJakartaSans_400Regular,
+      PlusJakartaSans_500Medium,
+      PlusJakartaSans_600SemiBold,
+      PlusJakartaSans_700Bold,
+      PlusJakartaSans_800ExtraBold,
+    });
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <ThemeProvider>
                 <AuthProvider>
-                    <AppGate />
+                    {fontsLoaded ? <AppGate /> : null}
                 </AuthProvider>
             </ThemeProvider>
         </GestureHandlerRootView>

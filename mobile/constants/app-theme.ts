@@ -1,27 +1,27 @@
 import type { BlurTint } from "expo-blur";
 
 export const Spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  xxl: 28,
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 24,
+  xxl: 34,
 };
 
 export const Radius = {
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 22,
+  sm: 8,
+  md: 10,
+  lg: 12,
+  xl: 14,
   pill: 999,
 };
 
 export const GlassRadius = {
-  sm: 14,
-  md: 20,
-  lg: 26,
-  xl: 32,
+  sm: 12,
+  md: 16,
+  lg: 20,
+  xl: 24,
   pill: 999,
 };
 
@@ -31,17 +31,50 @@ export const GlassTabBar = {
   sideMargin: 16,
 };
 
+export const FontFamily = {
+  regular: "PlusJakartaSans_400Regular",
+  medium: "PlusJakartaSans_500Medium",
+  semibold: "PlusJakartaSans_600SemiBold",
+  bold: "PlusJakartaSans_700Bold",
+  extrabold: "PlusJakartaSans_800ExtraBold",
+};
+
+export function fontForWeight(weight?: string): string {
+  switch (weight) {
+    case "800":
+      return FontFamily.extrabold;
+    case "700":
+      return FontFamily.bold;
+    case "600":
+      return FontFamily.semibold;
+    case "500":
+      return FontFamily.medium;
+    default:
+      return FontFamily.regular;
+  }
+}
+
 export const Type = {
-  largeTitle: { fontSize: 34, fontWeight: "800" as const, letterSpacing: 0.2 },
-  title1: { fontSize: 28, fontWeight: "800" as const, letterSpacing: 0.1 },
-  title2: { fontSize: 22, fontWeight: "700" as const },
-  title3: { fontSize: 20, fontWeight: "700" as const },
-  headline: { fontSize: 17, fontWeight: "700" as const },
-  body: { fontSize: 17, fontWeight: "400" as const },
-  callout: { fontSize: 15, fontWeight: "600" as const },
-  subhead: { fontSize: 15, fontWeight: "400" as const },
-  footnote: { fontSize: 13, fontWeight: "600" as const },
-  caption: { fontSize: 12, fontWeight: "600" as const },
+  largeTitle: {
+    fontSize: 34,
+    fontWeight: "800" as const,
+    fontFamily: FontFamily.extrabold,
+    letterSpacing: 0.2,
+  },
+  title1: {
+    fontSize: 28,
+    fontWeight: "800" as const,
+    fontFamily: FontFamily.extrabold,
+    letterSpacing: 0.1,
+  },
+  title2: { fontSize: 22, fontWeight: "700" as const, fontFamily: FontFamily.bold },
+  title3: { fontSize: 20, fontWeight: "700" as const, fontFamily: FontFamily.bold },
+  headline: { fontSize: 17, fontWeight: "700" as const, fontFamily: FontFamily.bold },
+  body: { fontSize: 17, fontWeight: "400" as const, fontFamily: FontFamily.regular },
+  callout: { fontSize: 15, fontWeight: "600" as const, fontFamily: FontFamily.semibold },
+  subhead: { fontSize: 15, fontWeight: "400" as const, fontFamily: FontFamily.regular },
+  footnote: { fontSize: 13, fontWeight: "600" as const, fontFamily: FontFamily.semibold },
+  caption: { fontSize: 12, fontWeight: "600" as const, fontFamily: FontFamily.semibold },
 };
 
 export type ColorTokens = {
@@ -64,6 +97,7 @@ export type ColorTokens = {
 
   primary: string;
   primaryMuted: string;
+  onPrimary: string;
   accent: string;
   accentMuted: string;
 
@@ -89,85 +123,87 @@ export type ColorTokens = {
 const dark: ColorTokens = {
   scheme: "dark",
 
-  background: "#000000",
-  backgroundElevated: "#0b0b0f",
+  background: "#0B0C10",
+  backgroundElevated: "#12141B",
 
-  card: "#1c1c1e",
-  card2: "#2c2c2e",
-  cardPressed: "#3a3a3c",
+  card: "#1F2833",
+  card2: "#29323E",
+  cardPressed: "#333D4B",
 
-  border: "rgba(255,255,255,0.09)",
-  separator: "rgba(255,255,255,0.12)",
+  border: "rgba(0,240,255,0.14)",
+  separator: "rgba(0,240,255,0.18)",
 
-  text: "#ffffff",
-  textSecondary: "rgba(255,255,255,0.72)",
-  textMuted: "rgba(255,255,255,0.45)",
-  textTertiary: "rgba(255,255,255,0.30)",
+  text: "#EAFEFF",
+  textSecondary: "rgba(234,254,255,0.72)",
+  textMuted: "rgba(234,254,255,0.45)",
+  textTertiary: "rgba(234,254,255,0.28)",
 
-  primary: "#D70E20",
-  primaryMuted: "rgba(215,14,32,0.16)",
-  accent: "#0A84FF",
-  accentMuted: "rgba(10,132,255,0.16)",
+  primary: "#00F0FF",
+  primaryMuted: "rgba(0,240,255,0.16)",
+  onPrimary: "#04191C",
+  accent: "#FF0055",
+  accentMuted: "rgba(255,0,85,0.16)",
 
-  success: "#30D158",
-  successMuted: "rgba(48,209,88,0.16)",
-  danger: "#FF453A",
-  dangerMuted: "rgba(255,69,58,0.16)",
-  warning: "#FF9F0A",
-  warningMuted: "rgba(255,159,10,0.16)",
+  success: "#39FF88",
+  successMuted: "rgba(57,255,136,0.16)",
+  danger: "#FF3355",
+  dangerMuted: "rgba(255,51,85,0.16)",
+  warning: "#FFC400",
+  warningMuted: "rgba(255,196,0,0.16)",
 
-  fill: "rgba(120,120,128,0.24)",
-  fillSecondary: "rgba(120,120,128,0.16)",
+  fill: "rgba(0,240,255,0.08)",
+  fillSecondary: "rgba(0,240,255,0.05)",
 
   blurTint: "systemChromeMaterialDark",
-  glassBg: "rgba(255,255,255,0.08)",
-  glassBgStrong: "rgba(255,255,255,0.14)",
-  glassStroke: "rgba(255,255,255,0.18)",
-  glassHighlight: "rgba(255,255,255,0.35)",
-  primaryGlassBg: "rgba(215,14,32,0.55)",
-  dangerGlassBg: "rgba(255,69,58,0.45)",
+  glassBg: "rgba(31,40,51,0.55)",
+  glassBgStrong: "rgba(31,40,51,0.78)",
+  glassStroke: "rgba(0,240,255,0.18)",
+  glassHighlight: "rgba(0,240,255,0.35)",
+  primaryGlassBg: "rgba(0,240,255,0.45)",
+  dangerGlassBg: "rgba(255,51,85,0.45)",
 };
 
 const light: ColorTokens = {
   scheme: "light",
 
-  background: "#F2F2F7",
+  background: "#FBF9F5",
   backgroundElevated: "#FFFFFF",
 
   card: "#FFFFFF",
-  card2: "#F2F2F7",
-  cardPressed: "#E5E5EA",
+  card2: "#F3EFE7",
+  cardPressed: "#EAE3D6",
 
-  border: "rgba(0,0,0,0.08)",
-  separator: "rgba(60,60,67,0.29)",
+  border: "rgba(28,28,28,0.08)",
+  separator: "rgba(28,28,28,0.12)",
 
-  text: "#000000",
-  textSecondary: "rgba(60,60,67,0.68)",
-  textMuted: "rgba(60,60,67,0.38)",
-  textTertiary: "rgba(60,60,67,0.20)",
+  text: "#1C1C1C",
+  textSecondary: "rgba(28,28,28,0.68)",
+  textMuted: "rgba(28,28,28,0.42)",
+  textTertiary: "rgba(28,28,28,0.24)",
 
-  primary: "#D70E20",
-  primaryMuted: "rgba(215,14,32,0.12)",
-  accent: "#007AFF",
-  accentMuted: "rgba(0,122,255,0.12)",
+  primary: "#BC002D",
+  primaryMuted: "rgba(188,0,45,0.12)",
+  onPrimary: "#FFFFFF",
+  accent: "#2A4B3D",
+  accentMuted: "rgba(42,75,61,0.12)",
 
-  success: "#34C759",
-  successMuted: "rgba(52,199,89,0.14)",
-  danger: "#FF3B30",
-  dangerMuted: "rgba(255,59,48,0.12)",
-  warning: "#FF9500",
-  warningMuted: "rgba(255,149,0,0.14)",
+  success: "#2A4B3D",
+  successMuted: "rgba(42,75,61,0.14)",
+  danger: "#BC002D",
+  dangerMuted: "rgba(188,0,45,0.12)",
+  warning: "#C98A2B",
+  warningMuted: "rgba(201,138,43,0.14)",
 
-  fill: "rgba(120,120,128,0.20)",
-  fillSecondary: "rgba(120,120,128,0.12)",
+  fill: "rgba(28,28,28,0.06)",
+  fillSecondary: "rgba(28,28,28,0.04)",
 
   blurTint: "systemChromeMaterialLight",
-  glassBg: "rgba(255,255,255,0.55)",
-  glassBgStrong: "rgba(255,255,255,0.75)",
-  glassStroke: "rgba(255,255,255,0.85)",
-  glassHighlight: "rgba(255,255,255,0.95)",
-  primaryGlassBg: "rgba(215,14,32,0.82)",
-  dangerGlassBg: "rgba(255,59,48,0.78)",
+  glassBg: "rgba(251,249,245,0.6)",
+  glassBgStrong: "rgba(251,249,245,0.82)",
+  glassStroke: "rgba(28,28,28,0.08)",
+  glassHighlight: "rgba(255,255,255,0.9)",
+  primaryGlassBg: "rgba(188,0,45,0.82)",
+  dangerGlassBg: "rgba(188,0,45,0.78)",
 };
 
 export function getColors(scheme: "light" | "dark"): ColorTokens {
