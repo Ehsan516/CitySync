@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Card from "@/components/ui/Card";
-import { Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type Props = {
@@ -46,7 +46,7 @@ function makeStyles(colors: ColorTokens) {
     row: { flexDirection: "row", alignItems: "center" },
     stat: { flex: 1, alignItems: "center", gap: 2 },
     statValue: { ...Type.title1, color: colors.text },
-    statLabel: { ...Type.footnote, color: colors.textMuted, fontWeight: "600" },
+    statLabel: { ...Type.footnote, color: colors.textMuted, fontWeight: "600", fontFamily: FontFamily.semibold },
     divider: {
       width: StyleSheet.hairlineWidth,
       alignSelf: "stretch",

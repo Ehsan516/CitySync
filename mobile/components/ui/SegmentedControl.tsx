@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { LayoutAnimation, Pressable, StyleSheet, Text, View } from "react-native";
-import { type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type Props = {
@@ -60,6 +60,7 @@ function makeStyles(colors: ColorTokens) {
     label: {
       color: colors.textMuted,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
       fontSize: 13,
     },
     labelActive: {

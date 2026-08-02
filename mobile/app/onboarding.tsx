@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {router} from "expo-router";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns"
 import {getUserId} from "@/lib/api";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 // const storageKey = "citysync_has_onboarded";
@@ -167,7 +167,7 @@ function makeStyles(colors: ColorTokens) {
     },
 
     linkText:{
-    color: colors.accent, fontWeight:"700",
+    color: colors.accent, fontWeight:"700", fontFamily: FontFamily.bold,
     fontSize:14,},
 
     btnGap:{marginTop: 16, gap: 10,},

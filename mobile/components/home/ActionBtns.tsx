@@ -108,7 +108,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.glassStroke,
     },
-    btnPrimaryText: { color: "white", ...Type.headline },
+    btnPrimaryText: { color: colors.onPrimary, ...Type.headline },
 
     btnSecondaryFlat: {
       backgroundColor: colors.fillSecondary,

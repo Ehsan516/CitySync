@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import type { CourseworkDto } from "@/lib/types";
 import { calcGrade, gradeColour, gradeLabel } from "@/lib/CwHelpers";
-import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 export default function GradeCard({ moduleId, coursework }: { moduleId: number; coursework: CourseworkDto[] }) {
@@ -106,16 +106,16 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     gap: Spacing.sm,
   },
 
-  heading: { fontSize: 13, fontWeight: "600", color: colors.textSecondary },
+  heading: { fontSize: 13, fontWeight: "600", fontFamily: FontFamily.semibold, color: colors.textSecondary },
 
   barTrack: { flexDirection: "row", height: 6, borderRadius: 99, overflow: "hidden", backgroundColor: colors.fill },
   barFill: { backgroundColor: colors.primary, borderRadius: 99 },
-  barLabel: { color: colors.textMuted, fontSize: 11, fontWeight: "600" },
+  barLabel: { color: colors.textMuted, fontSize: 11, fontWeight: "600", fontFamily: FontFamily.semibold },
 
   rangeRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-around", marginTop: Spacing.xs },
   rangeBox: { alignItems: "center", flex: 1 },
-  rangeValue: { color: colors.text, fontSize: 22, fontWeight: "800" },
-  rangeLabel: { fontSize: 12, fontWeight: "700", marginTop: 2 },
+  rangeValue: { color: colors.text, fontSize: 22, fontWeight: "800", fontFamily: FontFamily.extrabold },
+  rangeLabel: { fontSize: 12, fontWeight: "700", fontFamily: FontFamily.bold, marginTop: 2 },
 
   rangeSep: { color: colors.textMuted, fontSize: 15, paddingHorizontal: Spacing.sm },
   hint: { color: colors.textMuted, fontSize: 11, lineHeight: 16 },

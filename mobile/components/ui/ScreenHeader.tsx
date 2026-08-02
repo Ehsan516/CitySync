@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 import Animated, { Extrapolation, interpolate, SharedValue, useAnimatedStyle } from "react-native-reanimated";
-import { Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type Props = {
@@ -83,6 +83,7 @@ function makeStyles(colors: ColorTokens) {
       marginTop: 2,
       fontSize: 13,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
       color: colors.textMuted,
     },
     rightSlot: {

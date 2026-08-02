@@ -4,7 +4,7 @@ import { DangerBtn, PrimBtn, SecBtn} from "@/components/home/ActionBtns";
 import GradeCard from "@/components/home/GradeCard";
 import Card from "@/components/ui/Card";
 import type { CourseworkDto, ModuleDto } from "@/lib/types";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type Props = {
@@ -139,6 +139,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     color: colors.textMuted,
     marginBottom: 6,
     fontWeight: "600",
+    fontFamily: FontFamily.semibold,
     fontSize: 13,
   },
 
@@ -175,11 +176,13 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     color: colors.text,
     fontSize: 15,
     fontWeight: "800",
+    fontFamily: FontFamily.extrabold,
   },
   itemSub: {
     color: colors.textSecondary,
     marginTop: 3,
     fontWeight: "600",
+    fontFamily: FontFamily.semibold,
   },
   muted: {
     color: colors.textMuted,

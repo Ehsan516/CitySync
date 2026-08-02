@@ -4,7 +4,7 @@ import { ActivityIndicator,Alert,KeyboardAvoidingView,Platform,Pressable,SafeAre
 import {authApi, ApiError} from "@/lib/api";
 import Card from "@/components/ui/Card";
 import { GlassLayer } from "@/components/home/ActionBtns";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 
@@ -128,7 +128,7 @@ export default function LoginScreen({ onLogin }: Props) {
               >
                 {glass ? <GlassLayer colors={colors} tint={colors.primaryGlassBg} /> : null}
                 {loading ? (
-                  <ActivityIndicator color="white" />
+                  <ActivityIndicator color={colors.onPrimary} />
                 ) : (
                   <Text style={s.btnText}>Send Code</Text>
                 )}
@@ -163,7 +163,7 @@ export default function LoginScreen({ onLogin }: Props) {
               >
                 {glass ? <GlassLayer colors={colors} tint={colors.primaryGlassBg} /> : null}
                 {loading ? (
-                  <ActivityIndicator color="white" />
+                  <ActivityIndicator color={colors.onPrimary} />
                 ) : (
                   <Text style={s.btnText}>Verify and sign in</Text>
                 )}
@@ -191,13 +191,13 @@ export default function LoginScreen({ onLogin }: Props) {
         //login card centers vertically
         container: {flex: 1, justifyContent: "center", padding: Spacing.xl, gap: Spacing.xxl,},
         hero: { alignItems: "center", gap: 6 },
-        appName: {fontSize: 36, fontWeight: "800", color: colors.text,letterSpacing: -0.5,},
+        appName: {fontSize: 36, fontWeight: "800", fontFamily: FontFamily.extrabold, color: colors.text,letterSpacing: -0.5,},
         tagline: { color: colors.textMuted, fontSize: 14 },
 
         card: {gap: 12,},
         cardTitle: { color: colors.text, ...Type.title3 },
         hint:  { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
-        label: { color: colors.textMuted, fontWeight: "600", fontSize: 13 },
+        label: { color: colors.textMuted, fontWeight: "600", fontFamily: FontFamily.semibold, fontSize: 13 },
 
         input: {
           backgroundColor: colors.card2,
@@ -211,10 +211,11 @@ export default function LoginScreen({ onLogin }: Props) {
         codeInput: {
           fontSize: 28,
           fontWeight: "800",
+          fontFamily: FontFamily.extrabold,
           letterSpacing: 10,
           textAlign: "center",
         },
-        emailHighlight: { color: colors.text, fontWeight: "700" },
+        emailHighlight: { color: colors.text, fontWeight: "700", fontFamily: FontFamily.bold },
 
         btn: {
           backgroundColor: colors.primary,
@@ -224,7 +225,7 @@ export default function LoginScreen({ onLogin }: Props) {
           marginTop: 4,
           overflow: "hidden",
         },
-        btnText: { color: "white", fontWeight: "800", fontSize: 16 },
+        btnText: { color: colors.onPrimary, fontWeight: "800", fontFamily: FontFamily.extrabold, fontSize: 16 },
 
         back: { alignItems: "center", paddingVertical: 8 },
         backText: { color: colors.textMuted, fontSize: 13 },

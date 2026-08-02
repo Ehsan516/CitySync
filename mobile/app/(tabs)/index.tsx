@@ -5,7 +5,7 @@ import HeaderCard from "@/components/home/HeaderCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import { SecBtn } from "@/components/home/ActionBtns";
-import { Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
@@ -517,7 +517,7 @@ function makeStyles(colors: ColorTokens) {
       gap: 6,
     },
     gradeHeading: { ...Type.footnote, color: colors.textSecondary },
-    gradeValue: { fontSize: 32, fontWeight: "800" },
+    gradeValue: { fontSize: 32, fontWeight: "800", fontFamily: FontFamily.extrabold },
     gradeLabel: { ...Type.footnote, fontSize: 14 },
     gradeHint: { color: colors.textMuted, fontSize: 12, textAlign: "center", lineHeight: 17 },
   });

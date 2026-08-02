@@ -7,7 +7,7 @@ import Card from "@/components/ui/Card";
 import type { CourseworkDto, ModuleDto } from "@/lib/types";
 import { formatDate, formatTime } from "@/lib/dateUtils";
 import { getReminderLevel } from "@/lib/CwHelpers";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type Props = {
@@ -424,7 +424,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
   return StyleSheet.create({
   card: { gap: Spacing.sm },
   cardTitle: { ...Type.headline, color: colors.text, marginBottom: Spacing.xs },
-  label: { color: colors.textMuted, marginBottom: 6, fontWeight: "600", fontSize: 13 },
+  label: { color: colors.textMuted, marginBottom: 6, fontWeight: "600", fontFamily: FontFamily.semibold, fontSize: 13 },
   input: { backgroundColor: colors.card2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.sm, padding: 12, color: colors.text, fontSize: 15 },
   pickerWrap: { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.sm, overflow: "hidden", marginBottom: 8, backgroundColor: colors.card2 },
   formRow: { flexDirection: "row", gap: 10, marginBottom: 12 },//row layot for grouped inputs
@@ -432,18 +432,18 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
   switchRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 },
 
   itemCard: { flexDirection: "row", gap: 12, padding: 14, borderRadius: radius.md, backgroundColor: colors.card2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }, // list item card
-  itemTitle: { color: colors.text, fontSize: 15, fontWeight: "800" },//title
-  itemSub: { color: colors.textSecondary, marginTop: 3, fontWeight: "600" },//item subtitle
+  itemTitle: { color: colors.text, fontSize: 15, fontWeight: "800", fontFamily: FontFamily.extrabold },//title
+  itemSub: { color: colors.textSecondary, marginTop: 3, fontWeight: "600", fontFamily: FontFamily.semibold },//item subtitle
 
   muted: { color: colors.textMuted, marginTop: 6, fontSize: 13 },
   //^any text underneath
 
-  badge: { marginTop: 10, alignSelf: "flex-start", paddingVertical: 5, paddingHorizontal: 10, borderRadius: radius.pill, overflow: "hidden", fontWeight: "800", fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3 }, // status for complete/pending
+  badge: { marginTop: 10, alignSelf: "flex-start", paddingVertical: 5, paddingHorizontal: 10, borderRadius: radius.pill, overflow: "hidden", fontWeight: "800", fontFamily: FontFamily.extrabold, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.3 }, // status for complete/pending
   badgePending: { backgroundColor: colors.warningMuted, color: colors.warning },
   badgeDone: { backgroundColor: colors.successMuted, color: colors.success },
 
   editPanel: { marginTop: 12, padding: 12, borderRadius: radius.sm, backgroundColor: colors.card, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, gap: 6 }, // inline edit box
-  editLabel: { color: colors.textMuted, fontSize: 12, fontWeight: "600" },//edit label
+  editLabel: { color: colors.textMuted, fontSize: 12, fontWeight: "600", fontFamily: FontFamily.semibold },//edit label
   editInput: { backgroundColor: colors.card2, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: radius.sm, padding: 10, color: colors.text, fontSize: 14 }, // inline edit input
 
 
