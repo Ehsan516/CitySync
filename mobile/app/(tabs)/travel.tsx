@@ -7,7 +7,7 @@ import TravelPlanner from "@/components/travel/TravelPlanner";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Card from "@/components/ui/Card";
 import ScreenHeader from "@/components/ui/ScreenHeader";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
@@ -209,6 +209,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     fieldLabel: {
       fontSize: 13,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
       color: colors.textSecondary,
     },
     input: {
@@ -225,6 +226,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       color: colors.accent,
       fontSize: 13,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
     },
     hint: {
       fontSize: 12,

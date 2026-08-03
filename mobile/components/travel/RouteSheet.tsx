@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import TravelPlanner from "@/components/travel/TravelPlanner";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { TransitRoutingPref, TransitSubMode, TravelMode } from "@/lib/types";
 
@@ -114,7 +114,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       paddingBottom: Spacing.md,
     },
     sheetTitle: { ...Type.title3, color: colors.text },
-    sheetSubtitle: { color: colors.textSecondary, marginTop: 6, fontWeight: "600" },
+    sheetSubtitle: { color: colors.textSecondary, marginTop: 6, fontWeight: "600", fontFamily: FontFamily.semibold },
     sheetRoute: { color: colors.textMuted, marginTop: 4, fontSize: 12, lineHeight: 17 },
     body: {
       paddingHorizontal: Spacing.xl,
@@ -128,6 +128,6 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       borderTopColor: colors.separator,
     },
     closeBtn: { alignSelf: "center" },
-    closeBtnText: { color: colors.accent, fontSize: 16, fontWeight: "600" },
+    closeBtnText: { color: colors.accent, fontSize: 16, fontWeight: "600", fontFamily: FontFamily.semibold },
   });
 }

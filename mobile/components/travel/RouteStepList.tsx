@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatClock, formatDuration, vehicleLabel } from "@/lib/travelFormat";
 import type { RouteStepDto } from "@/lib/types";
@@ -106,6 +106,7 @@ function makeStyles(colors: ColorTokens) {
     stepIndex: {
       color: colors.textTertiary,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
       fontSize: 12,
       minWidth: 14,
     },
@@ -118,11 +119,13 @@ function makeStyles(colors: ColorTokens) {
     lineBadgeText: {
       fontSize: 12,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
     },
     stepKicker: {
       color: colors.textMuted,
       fontSize: 11,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
       textTransform: "uppercase",
       letterSpacing: 0.4,
     },
@@ -131,10 +134,12 @@ function makeStyles(colors: ColorTokens) {
       color: colors.textSecondary,
       fontSize: 12,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
     },
     stepTitle: {
       color: colors.text,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
       fontSize: 14,
       lineHeight: 19,
     },
@@ -149,6 +154,7 @@ function makeStyles(colors: ColorTokens) {
     stepMetaTime: {
       color: colors.text,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
       fontVariant: ["tabular-nums"],
     },
     stepSubMeta: {

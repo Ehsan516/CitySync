@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import RouteStepList from "@/components/travel/RouteStepList";
 import {
@@ -163,6 +163,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       color: colors.primary,
       fontSize: 10,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
       letterSpacing: 0.6,
     },
     topRow: {
@@ -177,6 +178,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       color: colors.text,
       fontSize: 24,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
       fontVariant: ["tabular-nums"],
     },
     arriveTime: {
@@ -192,11 +194,13 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       color: colors.text,
       fontSize: 15,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
     },
     countdown: {
       color: colors.accent,
       fontSize: 12,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
       marginTop: 2,
     },
     countdownDeparted: {
@@ -219,6 +223,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     lineBadgeText: {
       fontSize: 12,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
     },
     fromStop: {
       flex: 1,
@@ -243,16 +248,19 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     verdict: {
       fontSize: 12,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
     },
     departedNote: {
       color: colors.warning,
       fontSize: 12,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
     },
     expandHint: {
       color: colors.accent,
       fontSize: 12,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
       marginTop: 2,
     },
     steps: {

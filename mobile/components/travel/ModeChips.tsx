@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { MODE_LABELS, TRANSIT_SUB_MODE_LABELS } from "@/lib/travelFormat";
 import { TRANSIT_SUB_MODES, TRAVEL_MODES, type TransitSubMode, type TravelMode } from "@/lib/types";
@@ -119,10 +119,11 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     chipText: {
       color: colors.textSecondary,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
       fontSize: 13,
     },
     chipTextActive: {
-      color: "#fff",
+      color: colors.onPrimary,
     },
     subChip: {
       paddingHorizontal: 12,
@@ -138,6 +139,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     subChipText: {
       color: colors.textMuted,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
       fontSize: 12,
     },
     subChipTextActive: {

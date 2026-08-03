@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatClock, formatCountdown, parseIso } from "@/lib/travelFormat";
 import type { RouteOption } from "@/lib/types";
@@ -71,6 +71,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     title: {
       fontSize: 14,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
     },
     body: {
       color: colors.textSecondary,

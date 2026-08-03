@@ -8,7 +8,7 @@ import LiveStamp from "@/components/travel/LiveStamp";
 import LastServiceBanner from "@/components/travel/LastServiceBanner";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { SecBtn } from "@/components/home/ActionBtns";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useNow } from "@/hooks/useNow";
 import { useTravelPlan } from "@/hooks/useTravelPlan";
@@ -287,6 +287,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       color: colors.textSecondary,
       fontSize: 13,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
     },
     timeButton: {
       paddingHorizontal: 14,
@@ -300,6 +301,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
       color: colors.text,
       fontSize: 15,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
       fontVariant: ["tabular-nums"],
     },
     banner: {
@@ -311,6 +313,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
     bannerTitle: {
       ...Type.callout,
       fontWeight: "800",
+      fontFamily: FontFamily.extrabold,
     },
     bannerBody: {
       color: colors.textSecondary,

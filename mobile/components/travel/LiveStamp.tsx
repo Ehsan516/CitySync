@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { formatStaleness } from "@/lib/travelFormat";
 
@@ -60,12 +60,14 @@ function makeStyles(colors: ColorTokens) {
       color: colors.textMuted,
       fontSize: 12,
       fontWeight: "600",
+      fontFamily: FontFamily.semibold,
     },
     action: {
       marginLeft: "auto",
       color: colors.accent,
       fontSize: 12,
       fontWeight: "700",
+      fontFamily: FontFamily.bold,
     },
   });
 }
