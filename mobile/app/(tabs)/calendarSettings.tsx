@@ -8,7 +8,7 @@ import ScreenHeader from "@/components/ui/ScreenHeader";
 import Card from "@/components/ui/Card";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type CalRow = {//calendar object for rendering
@@ -211,14 +211,14 @@ function makeStyles(colors: ColorTokens) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
-    pillText: { color: colors.textSecondary, fontWeight: "600", fontSize: 12 },
+    pillText: { color: colors.textSecondary, fontWeight: "600", fontFamily: FontFamily.semibold, fontSize: 12 },
     calRow: {
       flexDirection: "row",
       gap: Spacing.md,
       alignItems: "center",
       justifyContent: "space-between",
     },
-    calTitle: { ...Type.callout, color: colors.text, fontSize: 16, fontWeight: "800" },
+    calTitle: { ...Type.callout, color: colors.text, fontSize: 16, fontWeight: "800", fontFamily: FontFamily.extrabold },
     calSub: { color: colors.textSecondary, marginTop: 2 },
     calMuted: { color: colors.textMuted, marginTop: 2, fontSize: 13 },
     calId: { color: colors.textTertiary, fontSize: 11, marginTop: 6 },

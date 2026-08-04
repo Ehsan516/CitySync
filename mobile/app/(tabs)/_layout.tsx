@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import TabBarBackground from '@/components/ui/tab-bar-background';
-import { GlassTabBar } from '@/constants/app-theme';
+import { FontFamily, GlassTabBar } from '@/constants/app-theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TabLayout() {
@@ -24,6 +24,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
+          fontFamily: FontFamily.semibold,
         },
         tabBarStyle: glass
           ? {

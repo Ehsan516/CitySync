@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import {View, Text, SectionList, StyleSheet, Pressable, RefreshControl} from "react-native";
 import Animated from "react-native-reanimated";
 import type { UnifiedItem } from "@/lib/types";
-import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 type SectionType ={
@@ -136,6 +136,7 @@ rangeLabel:{
     color: colors.textMuted,
     fontSize: 13,
     fontWeight: "600",
+    fontFamily: FontFamily.semibold,
     paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.sm,
 },
@@ -148,6 +149,7 @@ sectionHeader: {
 },
 sectionHeaderText: {
   fontWeight: "700",
+  fontFamily: FontFamily.bold,
   fontSize: 13,
   textTransform: "uppercase",
   letterSpacing: 0.4,
@@ -180,11 +182,13 @@ itemCardPast: {
 itemKicker: {
   fontSize: 11,
   fontWeight: "800",
+  fontFamily: FontFamily.extrabold,
   letterSpacing: 0.5,
   marginBottom: 3,
 },
 itemTitle: {
   fontWeight: "700",
+  fontFamily: FontFamily.bold,
   fontSize: 15,
   color: colors.text,
 },
@@ -203,6 +207,7 @@ itemMetaPast: {
 itemMetaLeave: {
   color: colors.success,
   fontWeight: "700",
+  fontFamily: FontFamily.bold,
 },
 itemTextPast: {
   color: colors.textMuted,
@@ -215,6 +220,7 @@ routeBtnText: {
   color: colors.accent,
   fontSize: 13,
   fontWeight: "600",
+  fontFamily: FontFamily.semibold,
 },
 emptyText: {
   padding: Spacing.lg,

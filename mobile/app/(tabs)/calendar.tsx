@@ -25,7 +25,7 @@ import UnifiedWeekView from "@/components/calendar/UnifiedWeekView";
 import RouteSheet, { type RouteSheetTarget } from "@/components/travel/RouteSheet";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import { SecBtn } from "@/components/home/ActionBtns";
-import { Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
@@ -457,6 +457,7 @@ function makeStyles(colors: ColorTokens, radius: typeof Radius) {
   onSiteLabel: {
     color: colors.text,
     fontWeight: "700",
+    fontFamily: FontFamily.bold,
     fontSize: 14,
   },
   onSiteHint: {

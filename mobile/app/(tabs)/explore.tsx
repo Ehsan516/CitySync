@@ -14,7 +14,7 @@ import type { TransitRoutingPref, TransitSubMode, TravelMode } from "@/lib/types
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
 import {useAuth} from "@/hooks/useAuth";
-import { Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
+import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 
 function SectionCard({ title, children, colors }: { title: string; children: React.ReactNode; colors: ColorTokens }) {
@@ -421,7 +421,7 @@ const {logout} = useAuth();
               {"CitySync calculates your leave time as:\n\n"}
             </Text>
 
-            <Text style={{ color: colors.primary, fontWeight: "700", fontSize: 13 }}>
+            <Text style={{ color: colors.primary, fontWeight: "700", fontFamily: FontFamily.bold, fontSize: 13 }}>
               {"Lecture start − (travel time + your buffer)"}
             </Text>
 
@@ -479,22 +479,22 @@ function makeStyles(colors: ColorTokens) {
   scroll: {padding: Spacing.xl,gap: Spacing.lg,},
   card: {gap: 10,},
   cardTitle: { ...Type.headline, color: colors.text, marginBottom: 4,
-  },fieldLabel: {fontSize: 13,fontWeight: "600",color: colors.textSecondary,},
+  },fieldLabel: {fontSize: 13,fontWeight: "600",fontFamily: FontFamily.semibold,color: colors.textSecondary,},
 
   input: {backgroundColor: colors.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: colors.border,borderRadius: Radius.sm,padding: 12,color: colors.text,fontSize: 15,},
   hint: {fontSize: 12,color: colors.textMuted,},
   sub: {fontSize: 13,color: colors.textSecondary,lineHeight: 20,},
 
   toggleRow: {flexDirection: "row",alignItems: "center",gap: Spacing.md,},
-  toggleLabel: {fontSize: 15,fontWeight: "700",color: colors.text,},
+  toggleLabel: {fontSize: 15,fontWeight: "700",fontFamily: FontFamily.bold,color: colors.text,},
 
   bufferRow: {flexDirection: "row",alignItems: "center",justifyContent: "center",gap: 20,marginVertical: 8,},
   bufferBtn: {backgroundColor: colors.card2,borderWidth: StyleSheet.hairlineWidth,borderColor: colors.border,borderRadius: Radius.sm,width: 56,height: 56,
     alignItems: "center",justifyContent: "center",},
-  bufferBtnText: {color: colors.text,fontSize: 20,fontWeight: "700",},
+  bufferBtnText: {color: colors.text,fontSize: 20,fontWeight: "700",fontFamily: FontFamily.bold,},
 
   bufferDisplay: {alignItems: "center",minWidth: 80,},
-  bufferValue: {color: colors.primary,fontSize: 40,fontWeight: "800",},
+  bufferValue: {color: colors.primary,fontSize: 40,fontWeight: "800",fontFamily: FontFamily.extrabold,},
   bufferUnit: {color: colors.textMuted, fontSize: 13,},
   });
 }
