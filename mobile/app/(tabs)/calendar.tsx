@@ -24,6 +24,7 @@ import type {
 import UnifiedWeekView from "@/components/calendar/UnifiedWeekView";
 import RouteSheet, { type RouteSheetTarget } from "@/components/travel/RouteSheet";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import { useAdjacentTabJump } from "@/components/ui/SwipeTabScreen";
 import { SecBtn } from "@/components/home/ActionBtns";
 import { FontFamily, Radius, Spacing, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -82,11 +83,17 @@ export default function CalendarScreen() {
 
   const isCurrentWeek = ymd(weekStart) === ymd(startOfWeek(new Date()));
 
+  const jumpTab = useAdjacentTabJump();
+
   const weekSwipe = Gesture.Pan()
     .activeOffsetX([-20, 20])
     .failOffsetY([-15, 15])
     .onEnd((e) => {
-      if (e.translationX < -40) {
+      if (e.translationX < -120) {
+        runOnJS(jumpTab)(1);
+      } else if (e.translationX > 120) {
+        runOnJS(jumpTab)(-1);
+      } else if (e.translationX < -40) {
         runOnJS(nextWeek)();
       } else if (e.translationX > 40) {
         runOnJS(prevWeek)();

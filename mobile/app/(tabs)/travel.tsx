@@ -7,6 +7,7 @@ import TravelPlanner from "@/components/travel/TravelPlanner";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Card from "@/components/ui/Card";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import SwipeTabScreen from "@/components/ui/SwipeTabScreen";
 import { FontFamily, Radius, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
@@ -173,6 +174,7 @@ export default function TravelScreen() {
   );
 
   return (
+    <SwipeTabScreen>
     <SafeAreaView style={s.safe}>
       <ScreenHeader title="Travel" subtitle={status || undefined} scrollY={scrollY} />
 
@@ -197,6 +199,7 @@ export default function TravelScreen() {
         />
       </Animated.ScrollView>
     </SafeAreaView>
+    </SwipeTabScreen>
   );
 }
 

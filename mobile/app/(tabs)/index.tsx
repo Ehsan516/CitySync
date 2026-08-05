@@ -3,6 +3,7 @@ import Animated from "react-native-reanimated";
 import { useAuth } from "@/hooks/useAuth";
 import HeaderCard from "@/components/home/HeaderCard";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import SwipeTabScreen from "@/components/ui/SwipeTabScreen";
 import Card from "@/components/ui/Card";
 import { SecBtn } from "@/components/home/ActionBtns";
 import { FontFamily, Spacing, Type, type ColorTokens } from "@/constants/app-theme";
@@ -393,6 +394,7 @@ export default function HomeScreen() {
   const { scrollY, onScroll } = useScrollHeader();
 
   return (
+    <SwipeTabScreen>
     <SafeAreaView style={styles.safe}>
       <ScreenHeader
         title="CitySync"
@@ -497,6 +499,7 @@ export default function HomeScreen() {
 
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </SwipeTabScreen>
 
   );
 }

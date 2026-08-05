@@ -6,6 +6,7 @@ import { getUserId, preferencesApi, accountApi, delUserId } from "@/lib/api";
 import {PrimBtn, DangerBtn} from "@/components/home/ActionBtns";
 import ModeChips from "@/components/travel/ModeChips";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import SwipeTabScreen from "@/components/ui/SwipeTabScreen";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import Card from "@/components/ui/Card";
 import { setCachedTransitModes, setCachedTravelMode } from "@/lib/prefs";
@@ -250,6 +251,7 @@ const {logout} = useAuth();
   const { scrollY, onScroll } = useScrollHeader();
 
   return (
+    <SwipeTabScreen>
     <SafeAreaView style={styles.safe}>
       <ScreenHeader title="Settings" subtitle={status.msg || undefined} scrollY={scrollY} />
       <KeyboardAvoidingView
@@ -469,6 +471,7 @@ const {logout} = useAuth();
       </KeyboardAvoidingView>
 
     </SafeAreaView>
+    </SwipeTabScreen>
   );
 }
 

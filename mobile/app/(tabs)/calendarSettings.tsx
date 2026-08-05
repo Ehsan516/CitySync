@@ -5,6 +5,7 @@ import * as Calendar from "expo-calendar";
 import { getSelectedCalendarIds, setSelectedCalendarIds, clearSelectedCalendarIds,} from "@/lib/prefs";
 import {PrimBtn, SecBtn} from "@/components/home/ActionBtns";
 import ScreenHeader from "@/components/ui/ScreenHeader";
+import SwipeTabScreen from "@/components/ui/SwipeTabScreen";
 import Card from "@/components/ui/Card";
 import { useScrollHeader } from "@/hooks/use-scroll-header";
 import { useTabBarPadding } from "@/hooks/use-tab-bar-padding";
@@ -121,6 +122,7 @@ export default function CalendarSettingsScreen() {
   const { scrollY, onScroll } = useScrollHeader();
 
   return (
+    <SwipeTabScreen>
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title="Timetable Calendars" subtitle={status} scrollY={scrollY} />
       <Animated.ScrollView
@@ -195,6 +197,7 @@ export default function CalendarSettingsScreen() {
         ))}
       </Animated.ScrollView>
     </SafeAreaView>
+    </SwipeTabScreen>
   );
 }
 
